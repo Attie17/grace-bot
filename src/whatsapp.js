@@ -1,0 +1,168 @@
+/**
+ * WhatsApp Business API Integration
+ * 
+ * Uses Twilio as the WhatsApp provider (easiest for SA market).
+ * For production scale, consider 360dialog or direct Meta integration.
+ * 
+ * Webhook flow:
+ * 1. User messages your WhatsApp number
+ * 2. Twilio POSTs to /api/whatsapp/webhook
+ * 3. We look up session by phone number
+ * 4. Route through same conversation engine as web widget
+ * 5. Send response back via Twilio
+ */
+
+import twilio from 'twilio';
+import { chat, detectCrisis } from './claude-client.js';
+import { loadConversation, saveConversation, createLead } from './database.js';
+import { notifyTherapist } from './handoff.js';
+import { logger } from './logger.js';
+
+const twilioClient = process.env.TWILIO_ACCOUNT_SID
+    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    : null;
+
+/**
+ * Handle incoming WhatsApp message from Twilio webhook.
+ * Twilio sends: Body, From, To, MessageSid, ProfileName, etc.
+ */
+export async function handleWhatsAppMessage(body) {
+    const { Body, From, ProfileName } = body;
+
+    if (!Body || !From) {
+        logger.warn({ body }, 'Malformed WhatsApp webhook');
+        return;
+    }
+
+    // Use phone number as session ID (stable across conversation)
+    const sessionId = `wa_${From.replace('whatsapp:', '')}`;
+
+    logger.info({ from: From, preview: Body.substring(0, 50) }, 'WhatsApp message received');
+
+    try {
+        // Crisis detection runs first for fast response
+        const crisis = await detectCrisis(Body);
+        
+        if (crisis.crisis && crisis.confidence > 0.9) {
+            const crisisResponses = {
+                overdose: `This sounds like a medical emergency. Please call for help immediately:\n\n📞 Emergency: 112 or 10177\n📞 Poison Centre: 0861 555 777\n\nStay on the line with them. A member of our team has been alerted.`,
+                withdrawal: `What you're describing sounds medically serious. Please get to an emergency room or call:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`,
+                violence: `I'm concerned about your safety right now. Please call for immediate help:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`,
+                medical: `This sounds like a medical emergency. Please call:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`
+            };
+            const crisisResponse = crisisResponses[crisis.type] || `It sounds like you may need immediate help. Please call:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`;
+
+            await sendWhatsApp(From, crisisResponse);
+            await notifyTherapist({
+                sessionId,
+                priority: 'CRISIS',
+                type: crisis.type,
+                lastMessage: Body
+            });
+
+            return;
+        }
+
+        // Load conversation history
+        const conversation = await loadConversation(sessionId);
+        const existingMetadata = conversation?.metadata || {};
+        const messages = conversation?.messages || [];
+
+        // First-time user? Send warm welcome before main response
+        if (messages.length === 0) {
+            const welcome = `Hello${ProfileName ? ` ${ProfileName}` : ''} 👋
+
+Thank you for reaching out to Stabilis Treatment Centre. You've taken a brave step, and we're here to help.
+
+I'm Grace, the first point of contact. I'll ask a few quick questions so our clinical team can call you back with real information about how we can help.
+
+Everything you share is confidential. 💙`;
+
+            await sendWhatsApp(From, welcome);
+            // Small delay so messages don't arrive simultaneously
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
+        // Main conversation
+        const { text, clinicalBrief } = await chat(messages, Body);
+
+        // Save conversation
+        const updatedMessages = [
+            ...messages,
+            { role: 'user', content: Body },
+            { role: 'assistant', content: text }
+        ];
+
+        await saveConversation(sessionId, updatedMessages, {
+            ...existingMetadata,
+            channel: 'whatsapp',
+            phone: From,
+            profile_name: ProfileName
+        });
+
+        // Send response
+        await sendWhatsApp(From, text);
+
+        // If qualified, create lead + notify therapist
+        if (clinicalBrief?.conversation_complete && !existingMetadata.lead_created) {
+            // Enrich with WhatsApp phone (they may have provided a different one)
+            const enrichedBrief = {
+                ...clinicalBrief,
+                contact_phone: clinicalBrief.contact_phone || From.replace('whatsapp:', '')
+            };
+
+            const leadId = await createLead(sessionId, enrichedBrief);
+            await notifyTherapist({
+                sessionId,
+                leadId,
+                priority: clinicalBrief.urgency === 'immediate' ? 'HIGH' : 'NORMAL',
+                brief: enrichedBrief
+            });
+
+            await saveConversation(sessionId, updatedMessages, {
+                ...existingMetadata,
+                channel: 'whatsapp',
+                phone: From,
+                profile_name: ProfileName,
+                lead_created: true,
+                lead_id: leadId
+            });
+        }
+
+    } catch (error) {
+        logger.error({ error: error.message, from: From }, 'WhatsApp handling error');
+        await sendWhatsApp(From, 'Sorry, something went wrong on our end. A team member will follow up with you shortly, or you can call us on 012 333 7702.');
+    }
+}
+
+/**
+ * Send WhatsApp message via Twilio.
+ */
+async function sendWhatsApp(to, message) {
+    if (!twilioClient) {
+        logger.warn('Twilio not configured - would send:', message);
+        return;
+    }
+
+    try {
+        await twilioClient.messages.create({
+            from: process.env.TWILIO_WHATSAPP_NUMBER,
+            to: to, // Already in whatsapp: format from webhook
+            body: message
+        });
+    } catch (error) {
+        logger.error({ error: error.message, to }, 'Failed to send WhatsApp');
+        throw error;
+    }
+}
+
+/**
+ * Send outbound WhatsApp (for follow-ups).
+ */
+export async function sendOutboundWhatsApp(phoneNumber, message) {
+    const to = phoneNumber.startsWith('whatsapp:') 
+        ? phoneNumber 
+        : `whatsapp:${phoneNumber}`;
+    
+    return sendWhatsApp(to, message);
+}

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>Stabilis Intake</title>
+<style>
+:root {
+    --primary: #2E5A87;
+    --primary-light: #4A7BA6;
+    --primary-dark: #1F3F5F;
+    --bg: #FAFAFA;
+    --bubble-bot: #EBF2F9;
+    --bubble-user: #2E5A87;
+    --text: #2C3E50;
+    --muted: #7F8C8D;
+    --border: #E0E0E0;
+    --success: #27AE60;
+    --danger: #C0392B;
+    --shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.widget {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    max-height: 700px;
+    background: white;
+    border-radius: 0;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+@media (min-width: 420px) {
+    .widget { border-radius: 16px; }
+}
+
+.header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: white;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.header-info h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-info p {
+    font-size: 12px;
+    opacity: 0.85;
+    margin: 2px 0 0;
+}
+
+.status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #27E07A;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #27E07A;
+}
+
+.chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+}
+
+.chat::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.bot {
+    background: var(--bubble-bot);
+    color: var(--text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.msg.user {
+    background: var(--bubble-user);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    position: relative;
+}
+
+.msg.user .save-check {
+    display: inline-block;
+    font-size: 11px;
+    margin-left: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.msg.user .save-check.visible {
+    opacity: 0.8;
+}
+
+.msg.system {
+    background: #FDF3E7;
+    color: #7E4E00;
+    align-self: center;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 8px;
+    max-width: 90%;
+}
+
+.typing {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--bubble-bot);
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+    width: fit-content;
+}
+
+.typing span {
+    width: 7px;
+    height: 7px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.15s; }
+.typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.input-area {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: white;
+}
+
+.consent {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.consent a {
+    color: var(--primary);
+}
+
+.input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.input-field {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    max-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-field:focus {
+    border-color: var(--primary);
+}
+
+.send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.1s, background 0.2s;
+}
+
+.send-btn:hover { background: var(--primary-dark); }
+.send-btn:active { transform: scale(0.95); }
+.send-btn:disabled {
+    background: var(--muted);
+    cursor: not-allowed;
+}
+
+.crisis-card {
+    background: #FEE;
+    border-left: 4px solid var(--danger);
+    padding: 14px;
+    border-radius: 8px;
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+.crisis-card strong {
+    color: var(--danger);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.crisis-card a {
+    color: var(--danger);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+    align-self: flex-start;
+    max-width: 92%;
+    animation: slideIn 0.3s ease-out;
+}
+
+.choice-btn {
+    background: white;
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.choice-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.footer-note {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    background: #FAFAFA;
+    border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<div class="widget">
+    <div class="header">
+        <div class="avatar">S</div>
+        <div class="header-info">
+            <h1>Stabilis Treatment Centre</h1>
+            <p>Chat with Grace, our intake assistant</p>
+        </div>
+        <div class="status">Online</div>
+    </div>
+
+    <div class="chat" id="chat">
+    </div>
+
+    <div class="input-area">
+        <div class="consent">
+            By messaging, you agree to our <a href="/privacy" target="_blank">Privacy Policy</a>. Not for emergencies — call Netcare 911 (082 911) or 10177.
+        </div>
+        <div class="input-row">
+            <textarea 
+                class="input-field" 
+                id="input" 
+                placeholder="Type your message..." 
+                rows="1"
+                maxlength="2000"
+            ></textarea>
+            <button class="send-btn" id="send" aria-label="Send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        50+ years of care · SANCA-registered · Medical aids welcome
+    </div>
+</div>
+
+<script>
+// Session management — start a fresh session if the previous one was marked ended.
+if (localStorage.getItem('stabilis_session_ended') === '1') {
+    localStorage.removeItem('stabilis_session');
+    localStorage.removeItem('stabilis_session_ended');
+}
+const sessionId = localStorage.getItem('stabilis_session')
+    || `web_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+localStorage.setItem('stabilis_session', sessionId);
+
+// UTM capture — read once from URL, persist per-session so it survives refreshes.
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+const UTM_STORAGE_KEY = `stabilis_utm_${sessionId}`;
+
+function captureUtmFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = {};
+    UTM_KEYS.forEach(key => {
+        const value = params.get(key);
+        if (value) fromUrl[key] = value;
+    });
+    if (Object.keys(fromUrl).length === 0) return null;
+    try { sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(fromUrl)); } catch {}
+    return fromUrl;
+}
+
+function readUtm() {
+    try {
+        const stored = sessionStorage.getItem(UTM_STORAGE_KEY);
+        if (stored) return JSON.parse(stored);
+    } catch {}
+    return null;
+}
+
+// Capture on first paint so even immediate refreshes still see the params.
+captureUtmFromUrl();
+
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+
+// Tracks the stage payload the user is currently answering. Drives submit routing.
+let currentStage = null;
+
+input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+});
+
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitText();
+    }
+});
+
+sendBtn.addEventListener('click', submitText);
+
+function addMessage(text, type = 'bot') {
+    const div = document.createElement('div');
+    div.className = `msg ${type}`;
+    div.textContent = text;
+    if (type === 'user') {
+        const check = document.createElement('span');
+        check.className = 'save-check';
+        check.textContent = ' ✅';
+        div.appendChild(check);
+    }
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+}
+
+function markSaved(userMsg) {
+    const check = userMsg?.querySelector('.save-check');
+    if (check) check.classList.add('visible');
+}
+
+function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'typing';
+    div.id = 'typing';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() {
+    const el = document.getElementById('typing');
+    if (el) el.remove();
+}
+
+function addCrisisCard() {
+    const div = document.createElement('div');
+    div.className = 'crisis-card';
+    div.innerHTML = `
+        <strong>🚨 Immediate help</strong>
+        <a href="tel:082911">Netcare 911 — 082 911</a><br>
+        <a href="tel:10177">Public Ambulance — 10177</a><br>
+        <a href="tel:0861555777">Poison Centre — 0861 555 777</a>
+    `;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function clearButtons() {
+    document.querySelectorAll('.btn-group').forEach(el => el.remove());
+}
+
+function renderButtons(options) {
+    clearButtons();
+    const group = document.createElement('div');
+    group.className = 'btn-group';
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = opt.label;
+        btn.addEventListener('click', () => submitChoice(opt));
+        group.appendChild(btn);
+    });
+    chat.appendChild(group);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function setTextInput(enabled, placeholder) {
+    input.disabled = !enabled;
+    sendBtn.disabled = !enabled;
+    if (placeholder !== undefined) input.placeholder = placeholder;
+    if (enabled) input.focus();
+}
+
+function showEndScreen() {
+    clearButtons();
+    setTextInput(false);
+    localStorage.setItem('stabilis_session_ended', '1');
+    setTimeout(() => {
+        const inputArea = document.querySelector('.input-area');
+        inputArea.innerHTML = `
+            <div style="text-align:center; padding:16px 20px; color:var(--muted); font-size:13px; line-height:1.6;">
+                💙 This conversation has ended.<br>Our team will be in touch soon.
+            </div>`;
+    }, 800);
+}
+
+function renderStage(payload) {
+    currentStage = payload;
+    if (!payload) return;
+
+    (payload.messages || []).forEach(msg => addMessage(msg, 'bot'));
+
+    if (payload.ended) {
+        showEndScreen();
+        return;
+    }
+
+    if (payload.inputType === 'buttons') {
+        setTextInput(false, 'Choose an option above…');
+        renderButtons(payload.options || []);
+    } else if (payload.inputType === 'text') {
+        clearButtons();
+        setTextInput(true, 'Type your message…');
+    } else {
+        clearButtons();
+        setTextInput(false);
+    }
+}
+
+async function submitChoice(option) {
+    if (!currentStage) return;
+    clearButtons();
+    const userMsg = addMessage(option.label, 'user');
+    setTextInput(false);
+    addTyping();
+
+    try {
+        const data = await postStage(currentStage.stageId, option.value);
+        removeTyping();
+        if (data?.saved) markSaved(userMsg);
+        renderResponse(data);
+    } catch (err) {
+        removeTyping();
+        addMessage('Connection error. Please try again or WhatsApp us directly.', 'system');
+        console.error(err);
+    }
+}
+
+async function submitText() {
+    const text = input.value.trim();
+    if (!text || !currentStage || currentStage.inputType !== 'text') return;
+
+    clearButtons();
+    const userMsg = addMessage(text, 'user');
+    input.value = '';
+    input.style.height = 'auto';
+    setTextInput(false);
+    addTyping();
+
+    try {
+        const data = currentStage.useAI
+            ? await postChat(text)
+            : await postStage(currentStage.stageId, text);
+        removeTyping();
+        if (data?.saved) markSaved(userMsg);
+        renderResponse(data);
+    } catch (err) {
+        removeTyping();
+        addMessage('Connection error. Please try again or WhatsApp us directly.', 'system');
+        console.error(err);
+    }
+}
+
+function renderResponse(data) {
+    if (!data) return;
+
+    if (data.crisis) {
+        addCrisisCard();
+        if (data.reply) addMessage(data.reply, 'bot');
+        setTextInput(false);
+        clearButtons();
+        return;
+    }
+
+    if (data.error) {
+        addMessage(data.error, 'system');
+        if (data.fallback_whatsapp) {
+            const div = document.createElement('div');
+            div.className = 'msg system';
+            div.innerHTML = `<a href="https://wa.me/${data.fallback_whatsapp}" style="color: #2E5A87; font-weight: 600;">📱 Message us on WhatsApp</a>`;
+            chat.appendChild(div);
+        }
+        if (currentStage?.inputType === 'text') setTextInput(true);
+        return;
+    }
+
+    // Stage 4b: AI empathetic reply first.
+    if (data.reply) addMessage(data.reply, 'bot');
+
+    // Stage path: scripted ack messages.
+    (data.ack || []).forEach(msg => addMessage(msg, 'bot'));
+
+    if (data.qualified) {
+        setTimeout(() => {
+            addMessage('✅ One of our staff members has been notified and will call you shortly.', 'system');
+        }, 1200);
+    }
+
+    renderStage(data.next);
+}
+
+async function postStage(stageId, value) {
+    const response = await fetch('/api/stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, stageId, value })
+    });
+    return response.json();
+}
+
+async function postChat(message) {
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, message })
+    });
+    return response.json();
+}
+
+async function bootstrap() {
+    setTextInput(false);
+    try {
+        const initRes = await fetch('/api/init');
+        const init = await initRes.json();
+        (init.messages || []).forEach(msg => addMessage(msg, 'bot'));
+
+        const stageRes = await fetch('/api/stage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, utm: readUtm() })
+        });
+        const data = await stageRes.json();
+        renderStage(data.next);
+    } catch (err) {
+        console.error('Failed to start conversation:', err);
+        addMessage('Connection error. Please refresh, or WhatsApp us directly.', 'system');
+    }
+}
+
+bootstrap();
+</script>
+
+</body>
+</html>
