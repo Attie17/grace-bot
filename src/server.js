@@ -114,27 +114,7 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
 
         const updatedMetadata = { ...metadata, leadData };
 
-        // Closing reached — qualify the lead from leadData. No AI call.
-        if (result.ended && !metadata.lead_created) {
-            const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
-            if (brief.contact_name && brief.contact_phone) {
-                const leadId = await createLead(sessionId, brief);
-                await notifyTherapist({
-                    sessionId,
-                    leadId,
-                    priority: leadData.urgent ? 'HIGH' : 'NORMAL',
-                    brief
-                });
-                updatedMetadata.lead_created = true;
-                updatedMetadata.lead_id = leadId;
-                logger.info({ sessionId, leadId }, 'Lead qualified');
-            } else {
-                logger.warn({ sessionId }, 'Closing without contact details — skipping lead creation');
-            }
-        }
-
-        await saveConversation(sessionId, updatedMessages, updatedMetadata);
-
+        // Send response immediately to user
         res.json({
             ack: result.ack,
             next: result.next,
@@ -142,6 +122,35 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
             qualified: !!updatedMetadata.lead_created,
             saved: true
         });
+
+        // Closing reached — save lead and send notifications in background
+        if (result.ended && !metadata.lead_created) {
+            setImmediate(async () => {
+                try {
+                    const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
+                    if (brief.contact_name && brief.contact_phone) {
+                        const leadId = await createLead(sessionId, brief);
+                        await notifyTherapist({
+                            sessionId,
+                            leadId,
+                            priority: leadData.urgent ? 'HIGH' : 'NORMAL',
+                            brief
+                        });
+                        updatedMetadata.lead_created = true;
+                        updatedMetadata.lead_id = leadId;
+                        logger.info({ sessionId, leadId }, 'Lead qualified');
+                    } else {
+                        logger.warn({ sessionId }, 'Closing without contact details — skipping lead creation');
+                    }
+                    await saveConversation(sessionId, updatedMessages, updatedMetadata);
+                } catch (err) {
+                    logger.error({ error: err.message, sessionId }, 'Background lead save failed');
+                }
+            });
+        } else {
+            // Non-closing stages: just save conversation synchronously
+            await saveConversation(sessionId, updatedMessages, updatedMetadata);
+        }
     } catch (error) {
         logger.error({ error: error.message, sessionId }, 'Stage error');
         res.status(500).json({ error: 'Sorry, something went wrong. Please try again.', saved: false });
