@@ -151,7 +151,18 @@ const stages = {
     stage5b: {
         prompt: () => ({
             messages: ['Which medical aid are you on?'],
-            inputType: 'text',
+            inputType: 'buttons',
+            options: [
+                { label: 'Discovery Health',   value: 'Discovery Health' },
+                { label: 'Medihelp',           value: 'Medihelp' },
+                { label: 'Bonitas',            value: 'Bonitas' },
+                { label: 'Momentum Health',    value: 'Momentum Health' },
+                { label: 'Bestmed',            value: 'Bestmed' },
+                { label: 'Fedhealth',          value: 'Fedhealth' },
+                { label: 'Profmed',            value: 'Profmed' },
+                { label: 'KeyHealth',          value: 'KeyHealth' },
+                { label: 'Other',              value: 'Other' }
+            ],
             stageId: 'stage5b'
         }),
         accept: (value, leadData) => {
