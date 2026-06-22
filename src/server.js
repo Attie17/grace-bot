@@ -3,8 +3,10 @@
  *
  * Routes:
  * - GET  /api/init    - Stage 1 opening (static)
- * - POST /api/stage   - Scripted stage transitions (no AI)
- * - POST /api/chat    - Stage 4b only: empathetic ack for health notes
+ * - POST /api/stage   - Scripted stage transitions (no AI). Also accepts Skip
+ *                       (value=null) for the optional notes catch-all.
+ * - POST /api/chat    - Empathetic ack for free-text stages:
+ *                       stage4b (health notes), wellness_intro, and notes.
  * - POST /api/whatsapp/webhook - WhatsApp Business webhook
  * - GET  /widget/*    - Embeddable widget files
  * - GET  /health      - Health check
@@ -21,12 +23,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { detectCrisis, respondToHealthNotes } from './claude-client.js';
+import { detectCrisis, respondEmpathetically, getResponseWithCrisisDetection } from './claude-client.js';
 import {
     buildOpeningPayload,
     getStagePayload,
     advance,
-    buildClinicalBrief
+    buildClinicalBrief,
+    FIRST_STAGE_ID
 } from './stages.js';
 import { saveConversation, loadConversation, createLead } from './database.js';
 import { notifyTherapist } from './handoff.js';
@@ -64,8 +67,9 @@ app.get('/api/init', (req, res) => {
  * Scripted stage transition. No Claude API call.
  *
  * Body: { sessionId, stageId, value }
- *   stageId omitted  → bootstrap (return the first question, stage2)
- *   stageId === 'stage4b' is rejected — the widget must use /api/chat for that one.
+ *   stageId omitted     → bootstrap (return the first question — the router).
+ *   stage4b/wellness_intro → rejected, the widget must use /api/chat.
+ *   stageId === 'notes' with value === null is the Skip path (no AI ack).
  */
 app.post('/api/stage', chatLimiter, async (req, res) => {
     const { sessionId, stageId, value } = req.body;
@@ -91,11 +95,14 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
                     metadata.utm = utm;
                 }
             }
-            return res.json({ ack: [], next: getStagePayload('stage2', leadData) });
+            return res.json({ ack: [], next: getStagePayload(FIRST_STAGE_ID, leadData) });
         }
 
-        if (stageId === 'stage4b') {
-            return res.status(400).json({ error: 'Stage 4b uses /api/chat' });
+        // Stages that take a free-text answer with an AI ack must come through
+        // /api/chat. `notes` is the exception: when the user hits Skip, the
+        // widget routes a null value here so we advance without an AI call.
+        if (stageId === 'stage4b' || stageId === 'wellness_intro') {
+            return res.status(400).json({ error: `${stageId} uses /api/chat` });
         }
 
         const result = advance(stageId, value, leadData);
@@ -142,44 +149,51 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
 });
 
 /**
- * Stage 4b only — empathetic ack for the user's free-text health notes,
- * then return the next stage (Stage 5) so the widget can render it.
+ * Empathetic Claude ack for a free-text stage, then return the next stage
+ * payload so the widget can render it. Used by stage4b (health notes),
+ * wellness_intro (the wellness opener), and notes (the catch-all when the
+ * user types something rather than skipping).
  *
- * Body: { sessionId, message }
+ * Body: { sessionId, message, stageId? }   // stageId defaults to 'stage4b'
  */
+const CHAT_STAGES = new Set(['stage4b', 'wellness_intro', 'notes']);
+
 app.post('/api/chat', chatLimiter, async (req, res) => {
-    const { sessionId, message } = req.body;
+    const { sessionId, message, stageId = 'stage4b' } = req.body;
     if (!sessionId || !message) {
         return res.status(400).json({ error: 'Missing sessionId or message' });
     }
     if (message.length > 2000) {
         return res.status(400).json({ error: 'Message too long' });
     }
+    if (!CHAT_STAGES.has(stageId)) {
+        return res.status(400).json({ error: 'Unsupported stage for /api/chat' });
+    }
 
     try {
-        const crisisCheckPromise = detectCrisis(message);
         const conversation = await loadConversation(sessionId);
         const metadata = conversation?.metadata || {};
         const leadData = metadata.leadData || {};
         const messages = conversation?.messages || [];
 
-        const crisis = await crisisCheckPromise;
-        if (crisis.crisis && crisis.confidence > 0.9) {
-            logger.warn({ sessionId, type: crisis.type }, 'Crisis detected');
-            const crisisResponse = generateCrisisResponse(crisis.type);
+        // Combined crisis detection + empathetic response in one API call
+        const { response: ack, crisis, type: crisisType } = 
+            await getResponseWithCrisisDetection(stageId, message);
+        
+        if (crisis && crisisType !== 'none') {
+            logger.warn({ sessionId, type: crisisType }, 'Crisis detected');
+            const crisisResponse = generateCrisisResponse(crisisType);
             await saveConversation(sessionId, [
                 ...messages,
                 { role: 'user', content: message },
                 { role: 'assistant', content: crisisResponse }
-            ], { ...metadata, crisis: true, crisis_type: crisis.type });
+            ], { ...metadata, crisis: true, crisis_type: crisisType });
             await notifyTherapist({
-                sessionId, priority: 'CRISIS', type: crisis.type, lastMessage: message
+                sessionId, priority: 'CRISIS', type: crisisType, lastMessage: message
             });
             return res.json({ reply: crisisResponse, crisis: true, sessionId, saved: true });
         }
-
-        const { text: ack } = await respondToHealthNotes(message);
-        const result = advance('stage4b', message, leadData);
+        const result = advance(stageId, message, leadData);
 
         const updatedMessages = [
             ...messages,
