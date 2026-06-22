@@ -71,7 +71,14 @@ async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
     if (priority === 'CRISIS') {
         message = `🚨 *STABILIS CRISIS ALERT*\n\nType: ${type}\nMessage: "${lastMessage?.substring(0, 200)}"\n\n⚡ Action: Contact user within 5 mins if possible.`;
     } else {
-        message = `📋 *URGENT GRACE BOT LEAD*\n\nName: ${brief.contact_name}\nPhone: ${brief.contact_phone}\nBest time to call: ${brief.preferred_callback_time || 'Any time'}\nStruggling with: ${brief.substance_primary}\nReadiness: ${brief.urgency}\nMedical Aid: ${brief.medical_aid || 'Not specified'}\n\nPlease contact within 1 hour.`;
+        const trackTag = brief.track === 'wellness' ? 'Wellness' : 'SUD';
+        const trackLine = brief.track === 'wellness'
+            ? `What they're going through: ${(brief.wellness_brief || 'Not shared').substring(0, 200)}`
+            : `Struggling with: ${brief.substance_primary}\nMedical Aid: ${brief.medical_aid || 'Not specified'}`;
+        const extraNotes = brief.additional_notes
+            ? `\nAdditional notes: ${brief.additional_notes.substring(0, 200)}`
+            : '';
+        message = `📋 *URGENT GRACE BOT LEAD (${trackTag})*\n\nName: ${brief.contact_name}\nPhone: ${brief.contact_phone}\nBest time to call: ${brief.preferred_callback_time || 'Any time'}\n${trackLine}\nReadiness: ${brief.urgency}${extraNotes}\n\nPlease contact within 1 hour.`;
     }
 
     const therapistNumber = process.env.THERAPIST_WHATSAPP.startsWith('whatsapp:')
@@ -84,6 +91,21 @@ async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
         to: therapistNumber
     });
 }
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+const TRACK_LABEL = {
+    wellness: '💚 Wellness — Emotional / Mental Health',
+    sud:      '💊 Substance Use'
+};
 
 async function sendEmail({ leadId, priority, brief }) {
     if (!process.env.RECEPTION_EMAIL) {
@@ -98,67 +120,99 @@ async function sendEmail({ leadId, priority, brief }) {
         'NORMAL': '#27ae60'
     }[priority] || '#7f8c8d';
 
-    const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: ${urgencyColor}; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">${isUrgent ? '🚨 URGENT — ' : ''}New Lead</h1>
-            <p style="margin: 5px 0;">Grace Bot — Stabilis Treatment Centre</p>
-        </div>
-        
-        <div style="padding: 20px; background: #f9f9f9;">
-            <h2 style="color: #2E5A87; margin-top: 0;">Contact Details</h2>
-            <p><strong>Name:</strong> ${brief.contact_name}</p>
-            <p><strong>Phone:</strong> <a href="tel:${brief.contact_phone}">${brief.contact_phone}</a></p>
-            <p><strong>WhatsApp:</strong> <a href="https://wa.me/${brief.contact_phone?.replace(/\D/g, '')}">Message on WhatsApp</a></p>
-            <p><strong>Preferred Callback:</strong> ${brief.preferred_callback_time || 'Any time'}</p>
-            <p><strong>Language:</strong> ${brief.language_preference || 'English'}</p>
-        </div>
+    const track = brief.track === 'wellness' ? 'wellness' : 'sud';
+    const trackLabel = TRACK_LABEL[track];
+    const trackBadgeColor = track === 'wellness' ? '#27ae60' : '#2E5A87';
 
+    const additionalNotesBlock = brief.additional_notes ? `
+        <div style="padding: 20px; background: #FFF8E1; border-left: 4px solid #F9A825;">
+            <h3 style="color: #7E5A00; margin-top: 0;">📌 Additional notes from the user</h3>
+            <p style="line-height: 1.6; white-space: pre-wrap;">${escapeHtml(brief.additional_notes)}</p>
+        </div>
+    ` : `
+        <div style="padding: 12px 20px; background: #f9f9f9; color: #888; font-size: 13px;">
+            No additional notes — the user skipped the optional catch-all.
+        </div>
+    `;
+
+    const clinicalBlock = track === 'sud' ? `
         <div style="padding: 20px;">
             <h2 style="color: #2E5A87;">Clinical Brief</h2>
             <table style="width: 100%; border-collapse: collapse;">
                 <tr style="background: #f0f0f0;">
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>For whom</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.for_whom}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.for_whom)}</td>
                 </tr>
                 <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Primary substance</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.substance_primary}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.substance_primary)}</td>
                 </tr>
                 <tr style="background: #f0f0f0;">
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Usage pattern</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.usage_pattern}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.usage_pattern)}</td>
                 </tr>
                 <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Previous treatment</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.previous_treatment}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.previous_treatment)}</td>
                 </tr>
                 <tr style="background: #f0f0f0;">
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Mental health</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.mental_health}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.mental_health)}</td>
                 </tr>
                 <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Medical flags</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.medical_flags || 'None'}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.medical_flags) || 'None'}</td>
                 </tr>
                 <tr style="background: #f0f0f0;">
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Medical aid</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;"><strong style="color: #27ae60;">${brief.medical_aid || 'None specified'}</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong style="color: #27ae60;">${escapeHtml(brief.medical_aid) || 'None specified'}</strong></td>
                 </tr>
                 <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Urgency</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;"><strong style="color: ${urgencyColor};">${brief.urgency}</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong style="color: ${urgencyColor};">${escapeHtml(brief.urgency)}</strong></td>
                 </tr>
                 <tr style="background: #f0f0f0;">
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Readiness (1-10)</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.readiness_score}/10</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.readiness_score ? `${escapeHtml(brief.readiness_score)}/10` : '—'}</td>
                 </tr>
                 <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Recommended programme</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${brief.recommended_programme}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(brief.recommended_programme)}</td>
                 </tr>
             </table>
         </div>
+    ` : `
+        <div style="padding: 20px;">
+            <h2 style="color: #2E5A87;">What they're going through (own words)</h2>
+            <div style="background: #F4F9F4; border-left: 4px solid #27ae60; padding: 14px; border-radius: 6px;">
+                <p style="line-height: 1.6; white-space: pre-wrap; margin: 0;">${escapeHtml(brief.wellness_brief) || '<span style="color:#888;">Not shared.</span>'}</p>
+            </div>
+        </div>
+    `;
+
+    const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${urgencyColor}; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">${isUrgent ? '🚨 URGENT — ' : ''}New Lead</h1>
+            <p style="margin: 5px 0;">Grace Bot — Stabilis Treatment & Wellness Centre</p>
+            <div style="display: inline-block; margin-top: 8px; background: ${trackBadgeColor}; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;">
+                ${trackLabel}
+            </div>
+        </div>
+
+        <div style="padding: 20px; background: #f9f9f9;">
+            <h2 style="color: #2E5A87; margin-top: 0;">Contact Details</h2>
+            <p><strong>Name:</strong> ${escapeHtml(brief.contact_name)}</p>
+            <p><strong>Phone:</strong> <a href="tel:${escapeHtml(brief.contact_phone)}">${escapeHtml(brief.contact_phone)}</a></p>
+            <p><strong>WhatsApp:</strong> <a href="https://wa.me/${escapeHtml(brief.contact_phone?.replace(/\D/g, ''))}">Message on WhatsApp</a></p>
+            <p><strong>Preferred Callback:</strong> ${escapeHtml(brief.preferred_callback_time) || 'Any time'}</p>
+            <p><strong>Language:</strong> ${escapeHtml(brief.language_preference) || 'English'}</p>
+            <p><strong>Track:</strong> <strong style="color: ${trackBadgeColor};">${trackLabel}</strong></p>
+        </div>
+
+        ${additionalNotesBlock}
+
+        ${clinicalBlock}
 
         <div style="padding: 20px;">
             <h2 style="color: #2E5A87;">Lead Source</h2>
@@ -172,25 +226,27 @@ async function sendEmail({ leadId, priority, brief }) {
                 ].map(([label, value], i) => `
                 <tr${i % 2 === 0 ? ' style="background: #f0f0f0;"' : ''}>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>${label}</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${value || '<span style="color: #888;">Not tracked</span>'}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(value) || '<span style="color: #888;">Not tracked</span>'}</td>
                 </tr>`).join('')}
             </table>
         </div>
 
+        ${brief.notes_for_therapist ? `
         <div style="padding: 20px; background: #EBF2F9;">
             <h3 style="color: #2E5A87; margin-top: 0;">Notes for Therapist</h3>
-            <p style="line-height: 1.6;">${brief.notes_for_therapist}</p>
-        </div>
+            <p style="line-height: 1.6; white-space: pre-wrap;">${escapeHtml(brief.notes_for_therapist)}</p>
+        </div>` : ''}
 
         <div style="padding: 20px; text-align: center; color: #888; font-size: 12px;">
-            Lead ID: ${leadId} | Generated by Grace Bot
+            Lead ID: ${escapeHtml(leadId)} | Generated by Grace Bot
         </div>
     </div>
     `;
 
+    const trackTag = track === 'wellness' ? 'Wellness' : 'SUD';
     const subject = priority === 'HIGH'
-        ? `🚨 URGENT — New Lead: ${brief.contact_name} — Grace Bot`
-        : `New Lead: ${brief.contact_name} — Grace Bot`;
+        ? `🚨 URGENT — New ${trackTag} Lead: ${brief.contact_name} — Grace Bot`
+        : `New ${trackTag} Lead: ${brief.contact_name} — Grace Bot`;
 
     await emailTransporter.sendMail({
         from: process.env.SMTP_FROM,

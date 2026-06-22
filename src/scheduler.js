@@ -54,8 +54,8 @@ function leadsToCSV(leads) {
  * Send the daily summary email with CSV attachment.
  */
 export async function sendDailySummary() {
-    if (!process.env.RECEPTION_EMAIL) {
-        logger.warn('RECEPTION_EMAIL not configured — skipping daily summary');
+    if (!process.env.CEO_EMAIL) {
+        logger.warn('CEO_EMAIL not configured — skipping daily summary');
         return;
     }
 
@@ -114,7 +114,7 @@ export async function sendDailySummary() {
 
         await emailTransporter.sendMail({
             from: process.env.SMTP_FROM,
-            to: process.env.RECEPTION_EMAIL,
+            to: process.env.CEO_EMAIL,
             subject,
             html,
             attachments: [
