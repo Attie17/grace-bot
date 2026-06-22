@@ -285,7 +285,7 @@ const stages = {
         accept: (value, leadData) => {
             leadData.contact_phone = value.trim();
             return {
-                ack: ['Got it — and the best time to call?'],
+                ack: ['Got it — thank you.'],
                 next: 'stage8'
             };
         }

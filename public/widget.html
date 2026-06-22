@@ -313,6 +313,17 @@ body {
     color: white;
 }
 
+.choice-btn.skip {
+    border-color: var(--muted);
+    color: var(--muted);
+    background: white;
+}
+
+.choice-btn.skip:hover {
+    background: var(--muted);
+    color: white;
+}
+
 .footer-note {
     text-align: center;
     padding: 8px;
@@ -508,6 +519,18 @@ function showEndScreen() {
     }, 800);
 }
 
+function renderSkipButton() {
+    const group = document.createElement('div');
+    group.className = 'btn-group';
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn skip';
+    btn.textContent = 'Skip';
+    btn.addEventListener('click', () => skipStage());
+    group.appendChild(btn);
+    chat.appendChild(group);
+    chat.scrollTop = chat.scrollHeight;
+}
+
 function renderStage(payload) {
     currentStage = payload;
     if (!payload) return;
@@ -525,6 +548,7 @@ function renderStage(payload) {
     } else if (payload.inputType === 'text') {
         clearButtons();
         setTextInput(true, 'Type your message…');
+        if (payload.skippable) renderSkipButton();
     } else {
         clearButtons();
         setTextInput(false);
@@ -563,8 +587,30 @@ async function submitText() {
 
     try {
         const data = currentStage.useAI
-            ? await postChat(text)
+            ? await postChat(currentStage.stageId, text)
             : await postStage(currentStage.stageId, text);
+        removeTyping();
+        if (data?.saved) markSaved(userMsg);
+        renderResponse(data);
+    } catch (err) {
+        removeTyping();
+        addMessage('Connection error. Please try again or WhatsApp us directly.', 'system');
+        console.error(err);
+    }
+}
+
+async function skipStage() {
+    if (!currentStage || !currentStage.skippable) return;
+    clearButtons();
+    // Clear any half-typed text so it isn't confused with the skip action.
+    input.value = '';
+    input.style.height = 'auto';
+    const userMsg = addMessage('Skip', 'user');
+    setTextInput(false);
+    addTyping();
+
+    try {
+        const data = await postStage(currentStage.stageId, null);
         removeTyping();
         if (data?.saved) markSaved(userMsg);
         renderResponse(data);
@@ -604,7 +650,8 @@ function renderResponse(data) {
     // Stage path: scripted ack messages.
     (data.ack || []).forEach(msg => addMessage(msg, 'bot'));
 
-    if (data.qualified) {
+    // Show notification only when conversation ends
+    if (data.ended && data.qualified) {
         setTimeout(() => {
             addMessage('✅ One of our staff members has been notified and will call you shortly.', 'system');
         }, 1200);
@@ -622,11 +669,11 @@ async function postStage(stageId, value) {
     return response.json();
 }
 
-async function postChat(message) {
+async function postChat(stageId, message) {
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, message })
+        body: JSON.stringify({ sessionId, stageId, message })
     });
     return response.json();
 }
