@@ -4,7 +4,12 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { CORE_SYSTEM_PROMPT, CRISIS_DETECTION_PROMPT } from './prompts.js';
+import {
+    CORE_SYSTEM_PROMPT,
+    CRISIS_DETECTION_PROMPT,
+    WELLNESS_INTRO_ACK_PROMPT,
+    ADDITIONAL_NOTES_ACK_PROMPT
+} from './prompts.js';
 import { logger } from './logger.js';
 
 let client = null;
@@ -12,7 +17,8 @@ let client = null;
 function getClient() {
     if (!client) {
         client = new Anthropic({
-            apiKey: process.env.ANTHROPIC_API_KEY
+            apiKey: process.env.ANTHROPIC_API_KEY,
+            timeout: 10000
         });
     }
     return client;
@@ -66,16 +72,31 @@ const STAGE_4B_SYSTEM_PROMPT = `You are Grace, a warm care counsellor for Stabil
 
 Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. Do not give medical advice. End warmly.`;
 
+const EMPATHY_PROMPTS = {
+    stage4b:        STAGE_4B_SYSTEM_PROMPT,
+    wellness_intro: WELLNESS_INTRO_ACK_PROMPT,
+    notes:          ADDITIONAL_NOTES_ACK_PROMPT
+};
+
+const EMPATHY_FALLBACK = {
+    stage4b:        'Thank you for sharing that with me.',
+    wellness_intro: "Thank you for trusting us with that. You're not alone in this.",
+    notes:          'Got it — the team will see that. Thank you.'
+};
+
 /**
- * Stage 4b acknowledgement — short, empathetic response to the user's
- * free-text health notes. No conversation history; no clinical brief.
+ * Short, empathetic acknowledgement for a free-text answer in the scripted
+ * flow. `context` selects the prompt + soft-fail copy.
  */
-export async function respondToHealthNotes(userInput) {
+export async function respondEmpathetically(context, userInput) {
+    const systemPrompt = EMPATHY_PROMPTS[context] || STAGE_4B_SYSTEM_PROMPT;
+    const fallback = EMPATHY_FALLBACK[context] || EMPATHY_FALLBACK.stage4b;
+
     try {
         const response = await getClient().messages.create({
             model: getModel(),
             max_tokens: 200,
-            system: STAGE_4B_SYSTEM_PROMPT,
+            system: systemPrompt,
             messages: [{ role: 'user', content: userInput }]
         });
         return {
@@ -83,14 +104,113 @@ export async function respondToHealthNotes(userInput) {
             usage: response.usage
         };
     } catch (error) {
-        logger.error({ error: error.message }, 'Stage 4b ack failed');
+        logger.error({ error: error.message, context }, 'Empathetic ack failed');
         // Soft-fail keeps the scripted flow moving if the model is down.
-        return { text: 'Thank you for sharing that with me.', usage: null };
+        return { text: fallback, usage: null };
+    }
+}
+
+/**
+ * Stage 4b acknowledgement — kept as a thin wrapper for existing callers.
+ */
+export async function respondToHealthNotes(userInput) {
+    return respondEmpathetically('stage4b', userInput);
+}
+
+/**
+ * Combined crisis detection + empathetic response in a single API call.
+ * Returns both the empathetic ack and crisis flags.
+ * Halves API cost and latency compared to two separate calls.
+ */
+function buildCombinedSystemPrompt(context) {
+    const empathyBase = EMPATHY_PROMPTS[context] || STAGE_4B_SYSTEM_PROMPT;
+    return `${empathyBase}
+
+Also analyze for crisis indicators:
+${CRISIS_DETECTION_PROMPT}
+
+Respond ONLY with valid JSON (no markdown, no code blocks):
+{
+  "response": "your empathetic acknowledgement",
+  "crisis": true or false,
+  "type": "none" or "overdose" or "withdrawal" or "violence" or "medical",
+  "confidence": number between 0 and 1
+}`;
+}
+
+export async function getResponseWithCrisisDetection(context, userInput) {
+    const systemPrompt = buildCombinedSystemPrompt(context);
+    const fallback = EMPATHY_FALLBACK[context] || EMPATHY_FALLBACK.stage4b;
+    const timeoutFallback = "Thank you for sharing that. Our team will give this the attention it deserves.";
+
+    try {
+        const response = await getClient().messages.create({
+            model: getModel(),
+            max_tokens: 500,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userInput }]
+        });
+
+        const text = response.content[0].text.trim();
+        
+        try {
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                logger.warn({ context }, 'No JSON in combined response');
+                return {
+                    response: fallback,
+                    crisis: false,
+                    type: 'none',
+                    confidence: 0,
+                    usage: response.usage
+                };
+            }
+            
+            const parsed = JSON.parse(jsonMatch[0]);
+            return {
+                response: parsed.response || fallback,
+                crisis: parsed.crisis || false,
+                type: parsed.type || 'none',
+                confidence: parsed.confidence || 0,
+                usage: response.usage
+            };
+        } catch (parseError) {
+            logger.warn({ error: parseError.message, context }, 'Failed to parse combined JSON');
+            return {
+                response: fallback,
+                crisis: false,
+                type: 'none',
+                confidence: 0,
+                usage: response.usage
+            };
+        }
+    } catch (error) {
+        // Handle timeout gracefully with warm fallback message
+        if (error.code === 'ERR_HTTP_REQUEST_TIMEOUT' || error.name === 'APIConnectionTimeoutError' || error.message.includes('timeout')) {
+            logger.warn({ error: error.message, context }, 'Claude API timeout (10s) — using fallback');
+            return {
+                response: timeoutFallback,
+                crisis: false,
+                type: 'none',
+                confidence: 0,
+                usage: null
+            };
+        }
+        
+        logger.error({ error: error.message, context }, 'Combined API call failed');
+        return {
+            response: fallback,
+            crisis: false,
+            type: 'none',
+            confidence: 0,
+            usage: null
+        };
     }
 }
 
 /**
  * Quick crisis detection - runs before main chat for fast response.
+ * DEPRECATED: Use getResponseWithCrisisDetection() for combined call.
  */
 export async function detectCrisis(message) {
     try {
