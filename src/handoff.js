@@ -36,14 +36,19 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
     const isCrisis = priority === 'CRISIS';
 
     try {
-        // Send WhatsApp for urgent leads and crisis
+        // Send WhatsApp in background (non-blocking) - don't wait
+        // If WhatsApp fails, email will still be sent
         if (priority === 'CRISIS') {
-            await sendWhatsAppAlert({ priority, brief, type, lastMessage });
+            sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
+                logger.warn({ error: err.message, leadId }, 'WhatsApp alert failed (continuing with email)');
+            });
         } else if (priority === 'HIGH' && brief) {
-            await sendWhatsAppAlert({ priority, brief, type, lastMessage });
+            sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
+                logger.warn({ error: err.message, leadId }, 'WhatsApp alert failed (continuing with email)');
+            });
         }
 
-        // Always send email with full brief
+        // Always send email with full brief - critical path that must not fail silently
         if (brief) {
             await sendEmail({ leadId, priority, brief });
         } else if (isCrisis) {
@@ -53,7 +58,7 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
         logger.info({ leadId, priority }, 'Therapist notified');
 
     } catch (error) {
-        logger.error({ error: error.message, leadId }, 'Failed to notify therapist');
+        logger.error({ error: error.message, leadId }, 'Failed to notify therapist - email not sent');
         // Don't throw - conversation should continue even if alert fails
     }
 }
