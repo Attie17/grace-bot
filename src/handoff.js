@@ -40,11 +40,11 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
         // If WhatsApp fails, email will still be sent
         if (priority === 'CRISIS') {
             sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
-                logger.warn({ error: err.message, leadId }, 'WhatsApp alert failed (continuing with email)');
+                logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
             });
         } else if (priority === 'HIGH' && brief) {
             sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
-                logger.warn({ error: err.message, leadId }, 'WhatsApp alert failed (continuing with email)');
+                logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
             });
         }
 
@@ -55,7 +55,7 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             await sendCrisisEmail({ sessionId, type, lastMessage });
         }
 
-        logger.info({ leadId, priority }, 'Therapist notified');
+        logger.info({ leadId, priority }, 'Therapist notified (email sent)');
 
     } catch (error) {
         logger.error({ error: error.message, leadId }, 'Failed to notify therapist - email not sent');
@@ -65,6 +65,7 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
 
 /**
  * Send WhatsApp alert to therapist via Twilio.
+ * Includes timeout handling for Railway deployments.
  */
 async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
     if (!twilioClient || !process.env.THERAPIST_WHATSAPP) {
@@ -90,11 +91,17 @@ async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
         ? process.env.THERAPIST_WHATSAPP
         : `whatsapp:${process.env.THERAPIST_WHATSAPP}`;
 
-    await twilioClient.messages.create({
-        body: message,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: therapistNumber
-    });
+    // Wrap in timeout to prevent hanging on slow networks (Railway)
+    return Promise.race([
+        twilioClient.messages.create({
+            body: message,
+            from: process.env.TWILIO_WHATSAPP_NUMBER,
+            to: therapistNumber
+        }),
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('WhatsApp send timeout (30s)')), 30000)
+        )
+    ]);
 }
 
 function escapeHtml(value) {
