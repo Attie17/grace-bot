@@ -40,6 +40,12 @@ import { startScheduler } from './scheduler.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Railway (and most PaaS) place the app behind a single reverse proxy that
+// sets X-Forwarded-For. Trust exactly one hop so express-rate-limit can read
+// the real client IP. Using a fixed count (not `true`) prevents clients from
+// spoofing the header to bypass rate limiting.
+app.set('trust proxy', 1);
+
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
