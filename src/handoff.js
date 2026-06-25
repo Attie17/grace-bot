@@ -22,7 +22,7 @@ const twilioClient = process.env.TWILIO_ACCOUNT_SID
 const emailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT),
-    secure: false,
+    secure: true,
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
@@ -42,7 +42,7 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
                 logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
             });
-        } else if (priority === 'HIGH' && brief) {
+        } else if ((priority === 'HIGH' || brief?.involves_minor) && brief) {
             sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
                 logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
             });
@@ -260,32 +260,56 @@ async function sendEmail({ leadId, priority, brief }) {
         ? `🚨 URGENT — New ${trackTag} Lead: ${brief.contact_name} — Grace Bot`
         : `New ${trackTag} Lead: ${brief.contact_name} — Grace Bot`;
 
+    // Send to reception
     await emailTransporter.sendMail({
         from: process.env.SMTP_FROM,
         to: process.env.RECEPTION_EMAIL,
         subject,
         html
     });
+
+    // Also send to CEO for HIGH priority leads
+    if (priority === 'HIGH' && process.env.CEO_EMAIL && process.env.CEO_EMAIL !== process.env.RECEPTION_EMAIL) {
+        await emailTransporter.sendMail({
+            from: process.env.SMTP_FROM,
+            to: process.env.CEO_EMAIL,
+            subject,
+            html
+        });
+    }
 }
 
 async function sendCrisisEmail({ sessionId, type, lastMessage }) {
     if (!process.env.RECEPTION_EMAIL) return;
 
+    const crisisHtml = `
+    <div style="font-family: Arial; padding: 20px;">
+        <h1 style="color: #c0392b;">🚨 Crisis Alert</h1>
+        <p><strong>Type:</strong> ${type}</p>
+        <p><strong>Session:</strong> ${sessionId}</p>
+        <p><strong>Last message:</strong></p>
+        <blockquote style="border-left: 3px solid #c0392b; padding-left: 15px;">
+            ${lastMessage}
+        </blockquote>
+        <p>The user has been shown crisis resources. If you can safely reach out, please do so.</p>
+    </div>
+    `;
+
+    // Send to reception
     await emailTransporter.sendMail({
         from: process.env.SMTP_FROM,
         to: process.env.RECEPTION_EMAIL,
         subject: `🚨 CRISIS ALERT — Grace Bot`,
-        html: `
-        <div style="font-family: Arial; padding: 20px;">
-            <h1 style="color: #c0392b;">🚨 Crisis Alert</h1>
-            <p><strong>Type:</strong> ${type}</p>
-            <p><strong>Session:</strong> ${sessionId}</p>
-            <p><strong>Last message:</strong></p>
-            <blockquote style="border-left: 3px solid #c0392b; padding-left: 15px;">
-                ${lastMessage}
-            </blockquote>
-            <p>The user has been shown crisis resources. If you can safely reach out, please do so.</p>
-        </div>
-        `
+        html: crisisHtml
     });
+
+    // Also send to CEO for crisis
+    if (process.env.CEO_EMAIL && process.env.CEO_EMAIL !== process.env.RECEPTION_EMAIL) {
+        await emailTransporter.sendMail({
+            from: process.env.SMTP_FROM,
+            to: process.env.CEO_EMAIL,
+            subject: `🚨 CRISIS ALERT — Grace Bot`,
+            html: crisisHtml
+        });
+    }
 }

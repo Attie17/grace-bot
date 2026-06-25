@@ -6,9 +6,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
     CORE_SYSTEM_PROMPT,
-    CRISIS_DETECTION_PROMPT,
-    WELLNESS_INTRO_ACK_PROMPT,
-    ADDITIONAL_NOTES_ACK_PROMPT
+    CRISIS_DETECTION_PROMPT
 } from './prompts.js';
 import { logger } from './logger.js';
 
@@ -71,6 +69,14 @@ export async function chat(messages, userMessage) {
 const STAGE_4B_SYSTEM_PROMPT = `You are Grace, a warm care counsellor for Stabilis Treatment Centre. The person has just shared free-text health notes in response to "Are there any other health concerns I should note — physical or mental health?"
 
 Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. Do not give medical advice. End warmly.`;
+
+const WELLNESS_INTRO_ACK_PROMPT = `You are Grace, a warm care counsellor for Stabilis Wellness Centre. The person has just shared their wellness journey or concerns. 
+
+Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. End warmly with a gentle invitation to continue.`;
+
+const ADDITIONAL_NOTES_ACK_PROMPT = `You are Grace, a warm care counsellor for Stabilis Treatment Centre. The person has shared additional thoughts or concerns they wanted to mention.
+
+Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. End warmly.`;
 
 const EMPATHY_PROMPTS = {
     stage4b:        STAGE_4B_SYSTEM_PROMPT,
@@ -215,7 +221,7 @@ export async function getResponseWithCrisisDetection(context, userInput) {
 export async function detectCrisis(message) {
     try {
         const response = await getClient().messages.create({
-            model: 'claude-haiku-4-5-20251001',
+            model: getModel(),
             max_tokens: 150,
             system: CRISIS_DETECTION_PROMPT,
             messages: [{ role: 'user', content: message }]
@@ -227,7 +233,7 @@ export async function detectCrisis(message) {
 
         return JSON.parse(jsonMatch[0]);
     } catch (error) {
-        logger.error({ error: error.message }, 'Crisis detection failed');
+        logger.warn({ error: error.message }, 'Crisis detection failed - continuing without crisis check');
         return { crisis: false, type: 'none', confidence: 0 };
     }
 }

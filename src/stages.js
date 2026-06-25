@@ -24,26 +24,7 @@ const stages = {
         accept: (value, leadData) => {
             leadData.track = value === 'wellness' ? 'wellness' : 'sud';
             if (leadData.track === 'wellness') return { next: 'wellness_intro' };
-            return { next: 'stage2' };
-        }
-    },
-
-    stage2: {
-        prompt: () => ({
-            messages: ['First — is this for yourself, or for someone you care about?'],
-            inputType: 'buttons',
-            options: [
-                { label: '🙋 For myself',           value: 'Myself' },
-                { label: '💑 My partner / spouse',  value: 'Partner/spouse' },
-                { label: '👦 My child',             value: 'My child' },
-                { label: '👨‍👩‍👧 A family member',   value: 'Family member' },
-                { label: '🤝 A friend',             value: 'A friend' }
-            ],
-            stageId: 'stage2'
-        }),
-        accept: (value, leadData) => {
-            leadData.for_whom = value;
-            return { next: 'stage3' };
+            return { next: 'stage_caller_type' };
         }
     },
 
@@ -169,8 +150,20 @@ const stages = {
             leadData.medical_aid_name = value.trim();
             return {
                 ack: ['Thank you — noted.'],
-                next: 'stage_city'
+                next: 'stage5c'
             };
+        }
+    },
+
+    stage5c: {
+        prompt: () => ({
+            messages: ['Do you have your medical member number handy? (This helps speed up our check-in process)'],
+            inputType: 'text',
+            stageId: 'stage5c'
+        }),
+        accept: (value, leadData) => {
+            leadData.medical_member_number = value.trim();
+            return { next: 'stage_city' };
         }
     },
 
@@ -182,13 +175,13 @@ const stages = {
         }),
         accept: (value, leadData) => {
             leadData.city = value.trim();
-            return { next: 'stage_caller_type' };
+            return { next: 'stage6' };
         }
     },
 
     stage_caller_type: {
         prompt: () => ({
-            messages: ['One more quick question — are you calling about yourself, or about someone younger than 18?'],
+            messages: ['Are you calling about yourself, or about someone younger than 18?'],
             inputType: 'buttons',
             options: [
                 { label: '🙋 For myself',                            value: 'myself' },
@@ -201,7 +194,74 @@ const stages = {
         }),
         accept: (value, leadData) => {
             leadData.caller_type = value;
-            return { next: 'stage6' };
+            // Map caller_type to for_whom for stage3/stage4a compatibility
+            const forWhomMap = {
+                'myself': 'Myself',
+                'i_am_under_18': 'Myself',
+                'under_18': 'My child',
+                'family_member': 'Family member',
+                'cbo_school': 'Other'
+            };
+            leadData.for_whom = forWhomMap[value] || 'Other';
+            // Minor flags
+            const isMinor = value === 'under_18' || value === 'i_am_under_18';
+            leadData.involves_minor = isMinor;
+            leadData.caller_age_band = value === 'i_am_under_18' ? 'minor_self'
+                                     : value === 'under_18'      ? 'minor_other'
+                                     : 'adult';
+            return { next: isMinor ? 'stage_guardian_name' : 'stage3' };
+        }
+    },
+
+    stage_guardian_name: {
+        prompt: () => ({
+            messages: [
+                "We'd love to make sure you have the right support around you. Is there a parent or guardian we can include in this process?",
+                "If yes, what is their name?"
+            ],
+            inputType: 'text',
+            placeholder: "Guardian's name, or type 'no' to skip",
+            stageId: 'stage_guardian_name'
+        }),
+        accept: (value, leadData) => {
+            const skip = value.trim().toLowerCase() === 'no' || value.trim() === '';
+            leadData.guardian_name = skip ? null : value.trim();
+            return { next: skip ? 'stage3' : 'stage_guardian_phone' };
+        }
+    },
+
+    stage_guardian_phone: {
+        prompt: (leadData) => ({
+            messages: [`What is the best number to reach ${leadData.guardian_name}?`],
+            inputType: 'text',
+            placeholder: "Guardian's phone number",
+            stageId: 'stage_guardian_phone'
+        }),
+        accept: (value, leadData) => {
+            leadData.guardian_phone = value.trim();
+            return { next: 'stage3' };
+        }
+    },
+
+    stage_guardian_relation: {
+        prompt: () => ({
+            messages: ['What is the guardian\'s relationship to the young person?'],
+            inputType: 'buttons',
+            options: [
+                { label: '👨‍👩‍👧 Parent',       value: 'Parent' },
+                { label: '👴 Grandparent',    value: 'Grandparent' },
+                { label: '👨‍👩‍👦 Step-parent', value: 'Step-parent' },
+                { label: '🧑 Other relative', value: 'Other relative' },
+                { label: '🏫 School / CBO',   value: 'School / CBO' }
+            ],
+            stageId: 'stage_guardian_relation'
+        }),
+        accept: (value, leadData) => {
+            leadData.guardian_relation = value;
+            return {
+                ack: ['Thank you — noted.'],
+                next: 'stage3'
+            };
         }
     },
 
@@ -286,6 +346,21 @@ const stages = {
             leadData.contact_phone = value.trim();
             return {
                 ack: ['Got it — thank you.'],
+                next: 'stage7c'
+            };
+        }
+    },
+
+    stage7c: {
+        prompt: () => ({
+            messages: ['And your email address (so we can send you confirmation and resources)?'],
+            inputType: 'text',
+            stageId: 'stage7c'
+        }),
+        accept: (value, leadData) => {
+            leadData.contact_email = value.trim();
+            return {
+                ack: ['Perfect — we have all your details now.'],
                 next: 'stage8'
             };
         }
@@ -386,14 +461,21 @@ export function buildClinicalBrief(leadData) {
         health_notes: leadData.health_notes || null,
         medical_aid: leadData.medical_aid || null,
         medical_aid_name: leadData.medical_aid_name || null,
+        medical_member_number: leadData.medical_member_number || null,
         readiness: leadData.readiness || null,
         contact_name: leadData.contact_name || null,
         contact_phone: leadData.contact_phone || null,
+        contact_email: leadData.contact_email || null,
         call_time: leadData.call_time || null,
         preferred_callback_time: callTimeMap[leadData.call_time] || leadData.call_time || null,
         wellness_brief: leadData.wellness_brief || null,
         additional_notes: leadData.additional_notes || null,
         city: leadData.city || null,
-        caller_type: leadData.caller_type || null
+        caller_type: leadData.caller_type || null,
+        involves_minor: leadData.involves_minor || false,
+        caller_age_band: leadData.caller_age_band || 'adult',
+        guardian_name: leadData.guardian_name || null,
+        guardian_phone: leadData.guardian_phone || null,
+        guardian_relation: leadData.guardian_relation || null
     };
 }

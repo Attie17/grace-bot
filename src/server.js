@@ -114,17 +114,16 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
 
         const updatedMetadata = { ...metadata, leadData };
 
-        // Send response immediately to user
-        res.json({
-            ack: result.ack,
-            next: result.next,
-            ended: result.ended,
-            qualified: !!updatedMetadata.lead_created,
-            saved: true
-        });
-
-        // Closing reached — save lead and send notifications in background
+        // Closing reached — respond now, then save lead and notify in background.
         if (result.ended && !metadata.lead_created) {
+            res.json({
+                ack: result.ack,
+                next: result.next,
+                ended: result.ended,
+                qualified: !!updatedMetadata.lead_created,
+                saved: true
+            });
+
             setImmediate(async () => {
                 try {
                     const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
@@ -148,8 +147,17 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
                 }
             });
         } else {
-            // Non-closing stages: just save conversation synchronously
+            // Non-closing stages: persist BEFORE responding so the next request
+            // reads fresh leadData (avoids a read-modify-write race that dropped
+            // fields like contact_name / guardian_name on rapid sequential stages).
             await saveConversation(sessionId, updatedMessages, updatedMetadata);
+            res.json({
+                ack: result.ack,
+                next: result.next,
+                ended: result.ended,
+                qualified: !!updatedMetadata.lead_created,
+                saved: true
+            });
         }
     } catch (error) {
         logger.error({ error: error.message, sessionId }, 'Stage error');
@@ -165,7 +173,7 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
  *
  * Body: { sessionId, message, stageId? }   // stageId defaults to 'stage4b'
  */
-const CHAT_STAGES = new Set(['stage4b', 'wellness_intro', 'notes']);
+const CHAT_STAGES = new Set(['stage4b', 'stage5c', 'stage_city', 'stage7a', 'stage7b', 'stage7c', 'wellness_intro', 'notes']);
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { sessionId, message, stageId = 'stage4b' } = req.body;
@@ -211,7 +219,34 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
             ...(result.next.messages || []).map(t => ({ role: 'assistant', content: t }))
         ];
 
-        await saveConversation(sessionId, updatedMessages, { ...metadata, leadData });
+        const updatedMetadata = { ...metadata, leadData };
+        await saveConversation(sessionId, updatedMessages, updatedMetadata);
+
+        // Notify therapist if conversation ended (web widget path)
+        if (result.ended && !metadata.lead_created) {
+            setImmediate(async () => {
+                try {
+                    const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
+                    if (brief.contact_name && brief.contact_phone) {
+                        const leadId = await createLead(sessionId, brief);
+                        await notifyTherapist({
+                            sessionId,
+                            leadId,
+                            priority: leadData.urgent ? 'HIGH' : 'NORMAL',
+                            brief
+                        });
+                        updatedMetadata.lead_created = true;
+                        updatedMetadata.lead_id = leadId;
+                        logger.info({ sessionId, leadId }, 'Lead qualified from web');
+                        await saveConversation(sessionId, updatedMessages, updatedMetadata);
+                    } else {
+                        logger.warn({ sessionId }, 'Closing without contact details — skipping lead creation');
+                    }
+                } catch (err) {
+                    logger.error({ error: err.message, sessionId }, 'Background lead save failed');
+                }
+            });
+        }
 
         res.json({
             reply: ack,

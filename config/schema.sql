@@ -23,6 +23,7 @@ CREATE TABLE leads (
     -- Contact
     contact_name TEXT,
     contact_phone TEXT,
+    contact_email TEXT,
     preferred_callback_time TEXT,
     language_preference TEXT DEFAULT 'english',
     

@@ -17,6 +17,7 @@ import { chat, detectCrisis } from './claude-client.js';
 import { loadConversation, saveConversation, createLead } from './database.js';
 import { notifyTherapist } from './handoff.js';
 import { logger } from './logger.js';
+import { getWhatsAppInitialStage, advanceWhatsAppStage, formatStageForWhatsApp } from './whatsapp-stages.js';
 
 const twilioClient = process.env.TWILIO_ACCOUNT_SID
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
@@ -41,7 +42,9 @@ export async function handleWhatsAppMessage(body) {
 
     try {
         // Crisis detection runs first for fast response
+        logger.debug({ sessionId }, 'Starting crisis detection');
         const crisis = await detectCrisis(Body);
+        logger.debug({ sessionId, crisis }, 'Crisis detection completed');
         
         if (crisis.crisis && crisis.confidence > 0.9) {
             const crisisResponses = {
@@ -64,11 +67,13 @@ export async function handleWhatsAppMessage(body) {
         }
 
         // Load conversation history
+        logger.debug({ sessionId }, 'Loading conversation history');
         const conversation = await loadConversation(sessionId);
         const existingMetadata = conversation?.metadata || {};
         const messages = conversation?.messages || [];
+        logger.debug({ sessionId, messageCount: messages.length }, 'Conversation loaded');
 
-        // First-time user? Send warm welcome before main response
+        // First-time user? Send warm welcome + start intake flow
         if (messages.length === 0) {
             const welcome = `Hello${ProfileName ? ` ${ProfileName}` : ''} 👋
 
@@ -78,55 +83,133 @@ I'm Grace, the first point of contact. I'll ask a few quick questions so our cli
 
 Everything you share is confidential. 💙`;
 
+            logger.debug({ sessionId }, 'Sending welcome message');
             await sendWhatsApp(From, welcome);
-            // Small delay so messages don't arrive simultaneously
+            
+            // Send first stage
+            const initialStage = getWhatsAppInitialStage();
             await new Promise(resolve => setTimeout(resolve, 1500));
-        }
+            await sendWhatsApp(From, initialStage.formattedMessage);
 
-        // Main conversation
-        const { text, clinicalBrief } = await chat(messages, Body);
-
-        // Save conversation
-        const updatedMessages = [
-            ...messages,
-            { role: 'user', content: Body },
-            { role: 'assistant', content: text }
-        ];
-
-        await saveConversation(sessionId, updatedMessages, {
-            ...existingMetadata,
-            channel: 'whatsapp',
-            phone: From,
-            profile_name: ProfileName
-        });
-
-        // Send response
-        await sendWhatsApp(From, text);
-
-        // If qualified, create lead + notify therapist
-        if (clinicalBrief?.conversation_complete && !existingMetadata.lead_created) {
-            // Enrich with WhatsApp phone (they may have provided a different one)
-            const enrichedBrief = {
-                ...clinicalBrief,
-                contact_phone: clinicalBrief.contact_phone || From.replace('whatsapp:', '')
-            };
-
-            const leadId = await createLead(sessionId, enrichedBrief);
-            await notifyTherapist({
-                sessionId,
-                leadId,
-                priority: clinicalBrief.urgency === 'immediate' ? 'HIGH' : 'NORMAL',
-                brief: enrichedBrief
-            });
-
-            await saveConversation(sessionId, updatedMessages, {
+            // Save conversation with stage tracking
+            await saveConversation(sessionId, [], {
                 ...existingMetadata,
                 channel: 'whatsapp',
                 phone: From,
                 profile_name: ProfileName,
-                lead_created: true,
-                lead_id: leadId
+                currentStage: initialStage.stageId,
+                leadData: {}
             });
+            return;
+        }
+
+        // User is responding during intake flow
+        let responseText = null;
+        let shouldContinueIntake = false;
+        let nextStageId = null;
+        let updatedLeadData = existingMetadata.leadData || {};
+
+        if (existingMetadata.currentStage && !existingMetadata.lead_created) {
+            // Advance through intake stage
+            logger.debug({ sessionId, currentStage: existingMetadata.currentStage }, 'Advancing stage');
+            
+            try {
+                const stageResult = advanceWhatsAppStage(
+                    existingMetadata.currentStage,
+                    Body,
+                    updatedLeadData
+                );
+
+                if (stageResult.error) {
+                    // Invalid input (e.g., wrong number), ask again
+                    responseText = stageResult.error;
+                    nextStageId = stageResult.stageId;
+                    shouldContinueIntake = true;
+                } else {
+                    // Valid stage advance
+                    responseText = stageResult.formattedMessage;
+                    nextStageId = stageResult.nextStageId;
+                    updatedLeadData = stageResult.leadData;
+                    shouldContinueIntake = !stageResult.ended;
+
+                    // Include acknowledgements
+                    if (stageResult.ack && stageResult.ack.length > 0) {
+                        responseText = stageResult.ack.join('\n\n') + '\n\n' + responseText;
+                    }
+                }
+            } catch (error) {
+                logger.error({ error: error.message, sessionId }, 'Stage advance failed');
+                // Fall back to AI chat on error
+                shouldContinueIntake = false;
+            }
+        }
+
+        // If not in intake or intake ended, use AI chat
+        if (!shouldContinueIntake && !responseText) {
+            logger.debug({ sessionId }, 'Starting chat');
+            const { text, clinicalBrief } = await chat(messages, Body);
+            logger.debug({ sessionId, textLength: text?.length }, 'Chat completed');
+            responseText = text;
+
+            // Check if conversation should end based on clinical brief
+            if (clinicalBrief?.conversation_complete) {
+                shouldContinueIntake = false;
+            }
+        }
+
+        // Save conversation with updated stage tracking
+        const updatedMessages = [
+            ...messages,
+            { role: 'user', content: Body },
+            { role: 'assistant', content: responseText }
+        ];
+
+        const updatedMetadata = {
+            ...existingMetadata,
+            channel: 'whatsapp',
+            phone: From,
+            profile_name: ProfileName,
+            leadData: updatedLeadData
+        };
+
+        if (shouldContinueIntake && nextStageId) {
+            updatedMetadata.currentStage = nextStageId;
+        } else if (!shouldContinueIntake) {
+            delete updatedMetadata.currentStage;
+        }
+
+        await saveConversation(sessionId, updatedMessages, updatedMetadata);
+
+        // Send response
+        logger.debug({ sessionId }, 'Sending response');
+        await sendWhatsApp(From, responseText);
+
+        // If intake ended and qualified, create lead + notify therapist
+        if (!shouldContinueIntake && updatedLeadData && Object.keys(updatedLeadData).length > 2 && !existingMetadata.lead_created) {
+            try {
+                // Construct clinical brief from leadData
+                const enrichedBrief = {
+                    ...updatedLeadData,
+                    contact_phone: updatedLeadData.contact_phone || From.replace('whatsapp:', ''),
+                    intake_complete: true
+                };
+
+                const leadId = await createLead(sessionId, enrichedBrief);
+                await notifyTherapist({
+                    sessionId,
+                    leadId,
+                    priority: updatedLeadData.urgent === 'urgent' ? 'HIGH' : 'NORMAL',
+                    brief: enrichedBrief
+                });
+
+                await saveConversation(sessionId, updatedMessages, {
+                    ...updatedMetadata,
+                    lead_created: true,
+                    lead_id: leadId
+                });
+            } catch (error) {
+                logger.error({ error: error.message, sessionId }, 'Lead creation failed');
+            }
         }
 
     } catch (error) {
