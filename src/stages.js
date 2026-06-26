@@ -569,7 +569,13 @@ const stages = {
         accept: (value, leadData) => {
             // Preserve crisis urgency_level from mental health flow
             if (leadData.urgency_level !== 'crisis') {
-                leadData.urgency_level = value;
+                // Map substance urgency values to database enum: stable/urgent/crisis
+                const urgencyMap = {
+                    'urgent': 'urgent',
+                    'managing': 'stable',
+                    'planning': 'stable'
+                };
+                leadData.urgency_level = urgencyMap[value] || 'stable';
             }
             if (value === 'urgent' || leadData.urgency_level === 'crisis') {
                 leadData.urgent = true;
