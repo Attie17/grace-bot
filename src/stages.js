@@ -349,7 +349,7 @@ const stages = {
     stage_opening_ack: {
         prompt: () => ({
             messages: [],
-            inputType: 'ai_ack',
+            inputType: 'none',
             stageId: 'stage_opening_ack'
         }),
         accept: (value, leadData) => {

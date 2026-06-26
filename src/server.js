@@ -111,8 +111,10 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
             return res.status(400).json({ error: `${stageId} uses /api/chat` });
         }
 
-        // stage_opening_ack: Generate personalized AI acknowledgement based on caller context
-        if (stageId === 'stage_opening_ack') {
+        let result = advance(stageId, value, leadData);
+
+        // If next stage is stage_opening_ack, auto-process it (generate AI ack and advance)
+        if (result.next.stageId === 'stage_opening_ack') {
             const callerContext = {
                 who_for: leadData.who_for || null,
                 caller_relation: leadData.caller_relation || null,
@@ -122,26 +124,14 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
 
             const { message: aiMessage } = await generateOpeningAcknowledgement(callerContext);
             
-            // Get next stage from stage definition
-            const result = advance(stageId, 'continue', leadData);
+            // Advance past stage_opening_ack to get the actual next stage
+            const nextResult = advance('stage_opening_ack', 'continue', leadData);
             
-            const ackTurns = [{ role: 'assistant', content: aiMessage }];
-            const questionTurns = (result.next.messages || []).map(text => ({ role: 'assistant', content: text }));
-            const updatedMessages = [...messages, ...ackTurns, ...questionTurns];
-            const updatedMetadata = { ...metadata, leadData };
-            
-            await saveConversation(sessionId, updatedMessages, updatedMetadata);
-            
-            return res.json({
-                ack: [aiMessage],
-                next: result.next,
-                ended: result.ended,
-                qualified: !!updatedMetadata.lead_created,
-                saved: true
-            });
+            // Merge the AI ack with any existing acks
+            result.ack = [...result.ack, aiMessage];
+            result.next = nextResult.next;
+            result.ended = nextResult.ended;
         }
-
-        const result = advance(stageId, value, leadData);
 
         const userTurn = value ? [{ role: 'user', content: String(value) }] : [];
         const ackTurns = result.ack.map(text => ({ role: 'assistant', content: text }));
