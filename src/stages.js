@@ -23,8 +23,7 @@ const stages = {
         }),
         accept: (value, leadData) => {
             leadData.track = value === 'wellness' ? 'wellness' : 'sud';
-            if (leadData.track === 'wellness') return { next: 'wellness_intro' };
-            return { next: 'stage_caller_type' };
+            return { next: 'stage_who_for' };
         }
     },
 
@@ -179,37 +178,183 @@ const stages = {
         }
     },
 
-    stage_caller_type: {
+    stage_who_for: {
         prompt: () => ({
-            messages: ['Are you calling about yourself, or about someone younger than 18?'],
+            messages: ['Who are you reaching out for?'],
             inputType: 'buttons',
             options: [
-                { label: '🙋 For myself',                            value: 'myself' },
-                { label: '👦 For someone under 18',                  value: 'under_18' },
-                { label: '🧒 I am under 18',                         value: 'i_am_under_18' },
-                { label: '👨‍👩‍👧 For a family member',               value: 'family_member' },
-                { label: '🏫 I work with young people (CBO/school)', value: 'cbo_school' }
+                { label: '🙋 For myself',           value: 'myself' },
+                { label: '👥 For someone else',     value: 'someone_else' },
+                { label: '🏫 I\'m a professional',   value: 'professional' }
             ],
-            stageId: 'stage_caller_type'
+            stageId: 'stage_who_for'
         }),
         accept: (value, leadData) => {
-            leadData.caller_type = value;
-            // Map caller_type to for_whom for stage3/stage4a compatibility
+            leadData.who_for = value;
+            if (value === 'myself') {
+                leadData.for_whom = 'Myself';
+                return { next: 'stage_track' };
+            }
+            if (value === 'someone_else') {
+                return { next: 'stage_relationship' };
+            }
+            // professional
+            leadData.for_whom = 'Professional referral';
+            return { next: 'stage_professional_ack' };
+        }
+    },
+
+    stage_relationship: {
+        prompt: () => ({
+            messages: ['What is your relationship to them?'],
+            inputType: 'buttons',
+            options: [
+                { label: '👧 My child or teenager',     value: 'child' },
+                { label: '💑 My partner or spouse',     value: 'partner' },
+                { label: '👨‍👩‍👧 A family member',       value: 'family' },
+                { label: '👫 A friend',                 value: 'friend' },
+                { label: '🤝 Other',                    value: 'other' }
+            ],
+            stageId: 'stage_relationship'
+        }),
+        accept: (value, leadData) => {
+            leadData.caller_relation = value;
+            // Map to for_whom for stage3/stage4a compatibility
             const forWhomMap = {
-                'myself': 'Myself',
-                'i_am_under_18': 'Myself',
-                'under_18': 'My child',
-                'family_member': 'Family member',
-                'cbo_school': 'Other'
+                'child': 'My child',
+                'partner': 'My partner',
+                'family': 'Family member',
+                'friend': 'Friend',
+                'other': 'Other'
             };
             leadData.for_whom = forWhomMap[value] || 'Other';
-            // Minor flags
-            const isMinor = value === 'under_18' || value === 'i_am_under_18';
-            leadData.involves_minor = isMinor;
-            leadData.caller_age_band = value === 'i_am_under_18' ? 'minor_self'
-                                     : value === 'under_18'      ? 'minor_other'
-                                     : 'adult';
-            return { next: isMinor ? 'stage_guardian_name' : 'stage3' };
+            return { next: 'stage_referred_name' };
+        }
+    },
+
+    stage_referred_name: {
+        prompt: () => ({
+            messages: ['What is their first name?'],
+            inputType: 'text',
+            stageId: 'stage_referred_name'
+        }),
+        accept: (value, leadData) => {
+            const name = value.trim();
+            leadData.referred_name = name;
+            // Save to notes for therapist
+            const relationLabel = {
+                'child': 'child/teenager',
+                'partner': 'partner',
+                'family': 'family member',
+                'friend': 'friend',
+                'other': 'person'
+            }[leadData.caller_relation] || 'person';
+            const note = `Calling about their ${relationLabel}, ${name}.`;
+            leadData.notes_for_therapist = leadData.notes_for_therapist 
+                ? `${note} ${leadData.notes_for_therapist}`
+                : note;
+            
+            // Route to stage_is_minor if child, otherwise to confidentiality
+            if (leadData.caller_relation === 'child') {
+                return { next: 'stage_is_minor' };
+            }
+            return { next: 'stage_confidentiality_assurance' };
+        }
+    },
+
+    stage_is_minor: {
+        prompt: () => ({
+            messages: ['Is your child or teenager under 18?'],
+            inputType: 'buttons',
+            options: [
+                { label: 'Yes, under 18',  value: 'yes' },
+                { label: 'No, 18 or over', value: 'no'  }
+            ],
+            stageId: 'stage_is_minor'
+        }),
+        accept: (value, leadData) => {
+            if (value === 'yes') {
+                leadData.involves_minor = true;
+                leadData.caller_age_band = 'minor_other';
+                return { next: 'stage_minor_confidentiality' };
+            }
+            // 18 or over
+            leadData.involves_minor = false;
+            leadData.caller_age_band = 'adult';
+            return { next: 'stage_confidentiality_assurance' };
+        }
+    },
+
+    stage_confidentiality_assurance: {
+        prompt: (leadData) => {
+            const name = leadData.referred_name || 'them';
+            return {
+                messages: [
+                    `Thank you for reaching out on ${name}'s behalf.`,
+                    'Everything shared here is confidential, and our team will handle this with care and professionalism.'
+                ],
+                inputType: 'buttons',
+                options: [
+                    { label: 'Continue', value: 'continue' }
+                ],
+                stageId: 'stage_confidentiality_assurance'
+            };
+        },
+        accept: (value, leadData) => {
+            return { next: 'stage_track' };
+        }
+    },
+
+    stage_minor_confidentiality: {
+        prompt: (leadData) => {
+            const name = leadData.referred_name || 'your child';
+            return {
+                messages: [
+                    `Thank you for reaching out for ${name}.`,
+                    'Working with young people requires special care. Our team is experienced in providing age-appropriate support, and everything discussed will be handled with sensitivity and confidentiality.'
+                ],
+                inputType: 'buttons',
+                options: [
+                    { label: 'Continue', value: 'continue' }
+                ],
+                stageId: 'stage_minor_confidentiality'
+            };
+        },
+        accept: (value, leadData) => {
+            return { next: 'stage_track' };
+        }
+    },
+
+    stage_professional_ack: {
+        prompt: () => ({
+            messages: [
+                'Thank you for your professional referral.',
+                'We appreciate your trust in Stabilis. Our team will reach out to discuss the best way to support this individual.'
+            ],
+            inputType: 'buttons',
+            options: [
+                { label: 'Continue', value: 'continue' }
+            ],
+            stageId: 'stage_professional_ack'
+        }),
+        accept: (value, leadData) => {
+            return { next: 'stage_track' };
+        }
+    },
+
+    stage_track: {
+        prompt: () => ({
+            messages: [],
+            inputType: 'none',
+            stageId: 'stage_track'
+        }),
+        accept: (value, leadData) => {
+            // Route based on track set in stage1b
+            if (leadData.track === 'wellness') {
+                return { next: 'wellness_intro' };
+            }
+            // SUD track
+            return { next: 'stage3' };
         }
     },
 
@@ -455,7 +600,10 @@ export function buildClinicalBrief(leadData) {
         conversation_complete: true,
         track,
         urgency,
+        who_for: leadData.who_for || null,
         for_whom: leadData.for_whom || null,
+        caller_relation: leadData.caller_relation || null,
+        referred_name: leadData.referred_name || null,
         substance_primary: leadData.struggle || null,
         previous_treatment: leadData.previous_treatment || null,
         health_notes: leadData.health_notes || null,
@@ -470,6 +618,7 @@ export function buildClinicalBrief(leadData) {
         preferred_callback_time: callTimeMap[leadData.call_time] || leadData.call_time || null,
         wellness_brief: leadData.wellness_brief || null,
         additional_notes: leadData.additional_notes || null,
+        notes_for_therapist: leadData.notes_for_therapist || null,
         city: leadData.city || null,
         caller_type: leadData.caller_type || null,
         involves_minor: leadData.involves_minor || false,
