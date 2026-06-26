@@ -567,8 +567,11 @@ const stages = {
             stageId: 'stage_urgency_detail'
         }),
         accept: (value, leadData) => {
-            leadData.urgency_level = value;
-            if (value === 'urgent') {
+            // Preserve crisis urgency_level from mental health flow
+            if (leadData.urgency_level !== 'crisis') {
+                leadData.urgency_level = value;
+            }
+            if (value === 'urgent' || leadData.urgency_level === 'crisis') {
                 leadData.urgent = true;
             }
             return { next: 'notes' };
