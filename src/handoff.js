@@ -77,8 +77,9 @@ async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
     if (priority === 'CRISIS') {
         message = `🚨 *STABILIS CRISIS ALERT*\n\nType: ${type}\nMessage: "${lastMessage?.substring(0, 200)}"\n\n⚡ Action: Contact user within 5 mins if possible.`;
     } else {
-        const trackTag = brief.track === 'wellness' ? 'Wellness' : 'SUD';
-        const trackLine = brief.track === 'wellness'
+        const isMentalHealth = brief.track === 'mental_health';
+        const trackTag = isMentalHealth ? 'Wellness' : 'SUD';
+        const trackLine = isMentalHealth
             ? `What they're going through: ${(brief.wellness_brief || 'Not shared').substring(0, 200)}`
             : `Struggling with: ${brief.substance_primary}\nMedical Aid: ${brief.medical_aid || 'Not specified'}`;
         const extraNotes = brief.additional_notes
@@ -115,8 +116,10 @@ function escapeHtml(value) {
 }
 
 const TRACK_LABEL = {
-    wellness: '💚 Wellness — Emotional / Mental Health',
-    sud:      '💊 Substance Use'
+    mental_health: '💚 Wellness — Emotional / Mental Health',
+    substance:     '💊 Substance Use',
+    digital:       '📱 Digital / Screen / Gaming',
+    not_sure:      '🤔 General Inquiry'
 };
 
 async function sendEmail({ leadId, priority, brief }) {
@@ -132,9 +135,10 @@ async function sendEmail({ leadId, priority, brief }) {
         'NORMAL': '#27ae60'
     }[priority] || '#7f8c8d';
 
-    const track = brief.track === 'wellness' ? 'wellness' : 'sud';
-    const trackLabel = TRACK_LABEL[track];
-    const trackBadgeColor = track === 'wellness' ? '#27ae60' : '#2E5A87';
+    const isMentalHealth = brief.track === 'mental_health';
+    const track = brief.track || 'substance';
+    const trackLabel = TRACK_LABEL[track] || TRACK_LABEL.substance;
+    const trackBadgeColor = isMentalHealth ? '#27ae60' : '#2E5A87';
 
     const additionalNotesBlock = brief.additional_notes ? `
         <div style="padding: 20px; background: #FFF8E1; border-left: 4px solid #F9A825;">
@@ -147,7 +151,7 @@ async function sendEmail({ leadId, priority, brief }) {
         </div>
     `;
 
-    const clinicalBlock = track === 'sud' ? `
+    const clinicalBlock = isMentalHealth ? `
         <div style="padding: 20px;">
             <h2 style="color: #2E5A87;">Clinical Brief</h2>
             <table style="width: 100%; border-collapse: collapse;">
@@ -255,7 +259,7 @@ async function sendEmail({ leadId, priority, brief }) {
     </div>
     `;
 
-    const trackTag = track === 'wellness' ? 'Wellness' : 'SUD';
+    const trackTag = isMentalHealth ? 'Wellness' : 'SUD';
     const subject = priority === 'HIGH'
         ? `🚨 URGENT — New ${trackTag} Lead: ${brief.contact_name} — Grace Bot`
         : `New ${trackTag} Lead: ${brief.contact_name} — Grace Bot`;

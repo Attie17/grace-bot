@@ -13,16 +13,11 @@ const URGENT_VALUE = "As soon as possible — it's urgent";
 const stages = {
     stage1b: {
         prompt: () => ({
-            messages: ['To make sure we get you to the right person — what brings you here today?'],
-            inputType: 'buttons',
-            options: [
-                { label: '💊 Substance Use',                 value: 'sud' },
-                { label: '💚 Emotional / Mental Health',     value: 'wellness' }
-            ],
+            messages: ['Hi there! Let\'s get you connected with the right support. First, who are you reaching out for today?'],
+            inputType: 'none',
             stageId: 'stage1b'
         }),
         accept: (value, leadData) => {
-            leadData.track = value === 'wellness' ? 'wellness' : 'sud';
             return { next: 'stage_who_for' };
         }
     },
@@ -335,16 +330,23 @@ const stages = {
 
     stage_track: {
         prompt: () => ({
-            messages: [],
-            inputType: 'none',
+            messages: ['What brings you here?'],
+            inputType: 'buttons',
+            options: [
+                { label: '🍷 Substance use',           value: 'substance' },
+                { label: '🧠 Emotional / mental health', value: 'mental_health' },
+                { label: '📱 Digital / screen / gaming', value: 'digital' },
+                { label: '🤔 Not sure',                value: 'not_sure' }
+            ],
             stageId: 'stage_track'
         }),
         accept: (value, leadData) => {
-            // Route based on track set in stage1b
-            if (leadData.track === 'wellness') {
+            leadData.track = value;
+            // Route based on track selection
+            if (value === 'mental_health') {
                 return { next: 'wellness_intro' };
             }
-            // SUD track
+            // substance, digital, not_sure all go to substance flow (stage3)
             return { next: 'stage3' };
         }
     },
@@ -575,10 +577,10 @@ export function advance(stageId, value, leadData = {}) {
 }
 
 export function buildClinicalBrief(leadData) {
-    const track = leadData.track || 'sud';
+    const track = leadData.track || 'substance';
     const urgency = leadData.urgent
         ? 'immediate'
-        : track === 'wellness' ? 'researching' : 'soon';
+        : track === 'mental_health' ? 'researching' : 'soon';
 
     const callTimeMap = {
         morning: 'Morning (8am–12pm)',
