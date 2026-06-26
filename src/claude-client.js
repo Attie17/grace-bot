@@ -78,6 +78,40 @@ const ADDITIONAL_NOTES_ACK_PROMPT = `You are Grace, a warm care counsellor for S
 
 Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. End warmly.`;
 
+/**
+ * Generate personalized opening acknowledgement based on caller context.
+ * Called after track selection to provide warm, context-aware greeting.
+ */
+export async function generateOpeningAcknowledgement(callerContext) {
+    const systemPrompt = `You are Grace, a warm and compassionate intake assistant for Stabilis Treatment Centre. Generate a single short acknowledgement message (2-3 sentences maximum) for the caller based on their context. Never mention clinical diagnoses. Never give advice. Be warm, non-judgmental, human. Do not mention that you are an AI.`;
+    
+    const fallback = "Thank you for reaching out. I'm here to help you through this process.";
+    
+    try {
+        const response = await getClient().messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 200,
+            system: systemPrompt,
+            messages: [{
+                role: 'user',
+                content: `Caller context: ${JSON.stringify(callerContext)}`
+            }]
+        });
+        
+        const text = response.content[0].text.trim();
+        return {
+            message: text || fallback,
+            usage: response.usage
+        };
+    } catch (error) {
+        logger.warn({ error: error.message }, 'Opening ack generation failed - using fallback');
+        return {
+            message: fallback,
+            usage: null
+        };
+    }
+}
+
 const EMPATHY_PROMPTS = {
     stage4b:        STAGE_4B_SYSTEM_PROMPT,
     wellness_intro: WELLNESS_INTRO_ACK_PROMPT,

@@ -27,7 +27,6 @@ const stages = {
             const subject = leadData.for_whom === 'Myself' ? 'you are' : 'they are';
             return {
                 messages: [
-                    'Thank you for sharing that.',
                     `What would you say ${subject} struggling with most right now?`
                 ],
                 inputType: 'buttons',
@@ -342,8 +341,20 @@ const stages = {
         }),
         accept: (value, leadData) => {
             leadData.track = value;
+            // Route to personalized opening acknowledgement
+            return { next: 'stage_opening_ack' };
+        }
+    },
+
+    stage_opening_ack: {
+        prompt: () => ({
+            messages: [],
+            inputType: 'ai_ack',
+            stageId: 'stage_opening_ack'
+        }),
+        accept: (value, leadData) => {
             // Route based on track selection
-            if (value === 'mental_health') {
+            if (leadData.track === 'mental_health') {
                 return { next: 'wellness_intro' };
             }
             // substance, digital, not_sure all go to substance flow (stage3)

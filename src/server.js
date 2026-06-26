@@ -23,7 +23,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { detectCrisis, respondEmpathetically, getResponseWithCrisisDetection } from './claude-client.js';
+import { detectCrisis, respondEmpathetically, getResponseWithCrisisDetection, generateOpeningAcknowledgement } from './claude-client.js';
 import {
     buildOpeningPayload,
     getStagePayload,
@@ -109,6 +109,36 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
         // widget routes a null value here so we advance without an AI call.
         if (stageId === 'stage4b' || stageId === 'wellness_intro') {
             return res.status(400).json({ error: `${stageId} uses /api/chat` });
+        }
+
+        // stage_opening_ack: Generate personalized AI acknowledgement based on caller context
+        if (stageId === 'stage_opening_ack') {
+            const callerContext = {
+                who_for: leadData.who_for || null,
+                caller_relation: leadData.caller_relation || null,
+                referred_name: leadData.referred_name || null,
+                track: leadData.track || null
+            };
+
+            const { message: aiMessage } = await generateOpeningAcknowledgement(callerContext);
+            
+            // Get next stage from stage definition
+            const result = advance(stageId, 'continue', leadData);
+            
+            const ackTurns = [{ role: 'assistant', content: aiMessage }];
+            const questionTurns = (result.next.messages || []).map(text => ({ role: 'assistant', content: text }));
+            const updatedMessages = [...messages, ...ackTurns, ...questionTurns];
+            const updatedMetadata = { ...metadata, leadData };
+            
+            await saveConversation(sessionId, updatedMessages, updatedMetadata);
+            
+            return res.json({
+                ack: [aiMessage],
+                next: result.next,
+                ended: result.ended,
+                qualified: !!updatedMetadata.lead_created,
+                saved: true
+            });
         }
 
         const result = advance(stageId, value, leadData);
