@@ -185,6 +185,7 @@ const stages = {
             inputType: 'buttons',
             options: [
                 { label: '🙋 For myself',           value: 'myself' },
+                { label: '🧒 I am under 18',        value: 'i_am_under_18' },
                 { label: '👥 For someone else',     value: 'someone_else' },
                 { label: '🏫 I\'m a professional',   value: 'professional' }
             ],
@@ -195,6 +196,12 @@ const stages = {
             if (value === 'myself') {
                 leadData.for_whom = 'Myself';
                 return { next: 'stage_track' };
+            }
+            if (value === 'i_am_under_18') {
+                leadData.involves_minor = true;
+                leadData.caller_age_band = 'minor_self';
+                leadData.for_whom = 'Myself (minor)';
+                return { next: 'stage_minor_self_intro' };
             }
             if (value === 'someone_else') {
                 return { next: 'stage_relationship' };
@@ -484,20 +491,46 @@ const stages = {
         }
     },
 
+    stage_minor_self_intro: {
+        prompt: () => ({
+            messages: [
+                "Thank you for reaching out. Everything you share here is completely confidential.",
+                "We want to make sure you have the right support around you. Do you have a parent or guardian who can be part of this process?"
+            ],
+            inputType: 'buttons',
+            options: [
+                { label: 'Yes, I have support',           value: 'yes' },
+                { label: 'No, I\'m doing this on my own',  value: 'no' }
+            ],
+            stageId: 'stage_minor_self_intro'
+        }),
+        accept: (value, leadData) => {
+            if (value === 'yes') {
+                return { next: 'stage_guardian_name' };
+            }
+            // No guardian support - note it and continue
+            leadData.guardian_name = null;
+            leadData.guardian_phone = null;
+            const note = 'Minor caller (under 18) - no guardian support identified.';
+            leadData.notes_for_therapist = leadData.notes_for_therapist 
+                ? `${note} ${leadData.notes_for_therapist}`
+                : note;
+            return { next: 'stage_track' };
+        }
+    },
+
     stage_guardian_name: {
         prompt: () => ({
             messages: [
-                "We'd love to make sure you have the right support around you. Is there a parent or guardian we can include in this process?",
-                "If yes, what is their name?"
+                "What is their name?"
             ],
             inputType: 'text',
-            placeholder: "Guardian's name, or type 'no' to skip",
+            placeholder: "Guardian's name",
             stageId: 'stage_guardian_name'
         }),
         accept: (value, leadData) => {
-            const skip = value.trim().toLowerCase() === 'no' || value.trim() === '';
-            leadData.guardian_name = skip ? null : value.trim();
-            return { next: skip ? 'stage3' : 'stage_guardian_phone' };
+            leadData.guardian_name = value.trim();
+            return { next: 'stage_guardian_phone' };
         }
     },
 
@@ -510,6 +543,10 @@ const stages = {
         }),
         accept: (value, leadData) => {
             leadData.guardian_phone = value.trim();
+            // Route based on who_for - minors go to track selection, others go to stage3
+            if (leadData.who_for === 'i_am_under_18') {
+                return { next: 'stage_track' };
+            }
             return { next: 'stage3' };
         }
     },
