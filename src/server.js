@@ -221,7 +221,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 
         // Combined crisis detection + empathetic response in one API call
         const { response: ack, crisis, type: crisisType } = 
-            await getResponseWithCrisisDetection(stageId, message);
+            await getResponseWithCrisisDetection(stageId, message, leadData);
         
         if (crisis && crisisType !== 'none') {
             logger.warn({ sessionId, type: crisisType }, 'Crisis detected');

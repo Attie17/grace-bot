@@ -70,6 +70,15 @@ const STAGE_4B_SYSTEM_PROMPT = `You are Grace, a warm care counsellor for Stabil
 
 Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. Do not give medical advice. End warmly.`;
 
+function buildHealthAckPrompt(leadData) {
+    const isThirdParty = leadData?.who_for && leadData.who_for !== 'myself' && leadData.who_for !== 'i_am_under_18';
+    const thirdPersonNote = isThirdParty 
+        ? ` If the caller is a third party (who_for !== 'myself' and who_for !== 'i_am_under_18'), use third-person language about the person being referred.`
+        : '';
+    
+    return `You are Grace. Generate a single empathetic acknowledgement (1-2 sentences) for a health concern just shared.${thirdPersonNote} Never diagnose. Never advise. Be warm and brief.`;
+}
+
 const WELLNESS_INTRO_ACK_PROMPT = `You are Grace, a warm care counsellor for Stabilis Wellness Centre. The person has just shared their wellness journey or concerns. 
 
 Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. End warmly with a gentle invitation to continue.`;
@@ -168,8 +177,14 @@ export async function respondToHealthNotes(userInput) {
  * Returns both the empathetic ack and crisis flags.
  * Halves API cost and latency compared to two separate calls.
  */
-function buildCombinedSystemPrompt(context) {
-    const empathyBase = EMPATHY_PROMPTS[context] || STAGE_4B_SYSTEM_PROMPT;
+function buildCombinedSystemPrompt(context, leadData = null) {
+    let empathyBase;
+    if (context === 'stage4b' && leadData) {
+        empathyBase = buildHealthAckPrompt(leadData);
+    } else {
+        empathyBase = EMPATHY_PROMPTS[context] || STAGE_4B_SYSTEM_PROMPT;
+    }
+    
     return `${empathyBase}
 
 Also analyze for crisis indicators:
@@ -184,17 +199,28 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
 }`;
 }
 
-export async function getResponseWithCrisisDetection(context, userInput) {
-    const systemPrompt = buildCombinedSystemPrompt(context);
+export async function getResponseWithCrisisDetection(context, userInput, leadData = null) {
+    const systemPrompt = buildCombinedSystemPrompt(context, leadData);
     const fallback = EMPATHY_FALLBACK[context] || EMPATHY_FALLBACK.stage4b;
     const timeoutFallback = "Thank you for sharing that. Our team will give this the attention it deserves.";
+    
+    // Build user message with context for stage4b
+    let userMessage = userInput;
+    if (context === 'stage4b' && leadData) {
+        const callerContext = {
+            who_for: leadData.who_for,
+            referred_name: leadData.referred_name,
+            track: leadData.track
+        };
+        userMessage = `Health concern: "${userInput}"\nCaller context: ${JSON.stringify(callerContext)}`;
+    }
 
     try {
         const response = await getClient().messages.create({
             model: getModel(),
             max_tokens: 500,
             system: systemPrompt,
-            messages: [{ role: 'user', content: userInput }]
+            messages: [{ role: 'user', content: userMessage }]
         });
 
         const text = response.content[0].text.trim();
