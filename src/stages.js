@@ -490,6 +490,26 @@ const stages = {
         accept: (value, leadData) => {
             leadData.readiness = value;
             if (value === URGENT_VALUE) leadData.urgent = true;
+            return { next: 'stage_urgency_detail' };
+        }
+    },
+
+    stage_urgency_detail: {
+        prompt: () => ({
+            messages: ['How would you describe where things are right now?'],
+            inputType: 'buttons',
+            options: [
+                { label: '🔴 Getting worse — I need help urgently', value: 'urgent'   },
+                { label: '🟠 Struggling but managing',              value: 'managing' },
+                { label: '🟢 Thinking about making a change',       value: 'planning' }
+            ],
+            stageId: 'stage_urgency_detail'
+        }),
+        accept: (value, leadData) => {
+            leadData.urgency_level = value;
+            if (value === 'urgent') {
+                leadData.urgent = true;
+            }
             return { next: 'notes' };
         }
     },
