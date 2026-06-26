@@ -110,6 +110,8 @@ export async function createLead(sessionId, brief) {
             recommended_programme: brief.recommended_programme,
             preferred_callback_time: brief.preferred_callback_time,
             notes_for_therapist: brief.notes_for_therapist,
+            mh_description: brief.mh_description || null,
+            urgency_level: brief.urgency_level || null,
             language_preference: brief.language_preference,
             city: brief.city,
             caller_type: brief.caller_type,

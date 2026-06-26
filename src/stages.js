@@ -355,10 +355,71 @@ const stages = {
         accept: (value, leadData) => {
             // Route based on track selection
             if (leadData.track === 'mental_health') {
-                return { next: 'wellness_intro' };
+                return { next: 'stage_mh_opening' };
             }
             // substance, digital, not_sure all go to substance flow (stage3)
             return { next: 'stage3' };
+        }
+    },
+
+    stage_mh_opening: {
+        prompt: () => ({
+            messages: [
+                "Tell me a little about what you're going through — in your own words, no pressure."
+            ],
+            inputType: 'text',
+            useAI: true,
+            stageId: 'stage_mh_opening'
+        }),
+        accept: (value, leadData) => {
+            const description = (value || '').trim();
+            leadData.mh_description = description;
+            leadData.notes_for_therapist = (leadData.notes_for_therapist || '') + '\n\nMental health description: ' + description;
+            return { next: 'stage_mh_safety' };
+        }
+    },
+
+    stage_mh_safety: {
+        prompt: () => ({
+            messages: ['How would you describe where things are right now?'],
+            inputType: 'buttons',
+            options: [
+                { label: '🟢 I\'m struggling but I\'m okay',     value: 'stable' },
+                { label: '🟠 This feels urgent',                value: 'urgent' },
+                { label: '🔴 I\'m in crisis right now',          value: 'crisis' }
+            ],
+            stageId: 'stage_mh_safety'
+        }),
+        accept: (value, leadData) => {
+            leadData.urgency_level = value;
+            
+            if (value === 'crisis') {
+                return {
+                    ack: [
+                        "Please know you are not alone. If you are in immediate danger, please call 10177 (emergency) or Netcare 911 on 082 911. Our team will also contact you as a priority — please continue so we have your details."
+                    ],
+                    next: 'stage_mh_prior_treatment'
+                };
+            }
+            
+            return { next: 'stage_mh_prior_treatment' };
+        }
+    },
+
+    stage_mh_prior_treatment: {
+        prompt: () => ({
+            messages: ['Have you seen a therapist, counsellor, or psychiatrist before?'],
+            inputType: 'buttons',
+            options: [
+                { label: 'Yes',                          value: 'yes' },
+                { label: 'No',                           value: 'no'  },
+                { label: 'I\'m currently seeing someone', value: 'current' }
+            ],
+            stageId: 'stage_mh_prior_treatment'
+        }),
+        accept: (value, leadData) => {
+            leadData.previous_treatment = value;
+            return { next: 'stage4b' };
         }
     },
 
@@ -621,6 +682,8 @@ export function buildClinicalBrief(leadData) {
         call_time: leadData.call_time || null,
         preferred_callback_time: callTimeMap[leadData.call_time] || leadData.call_time || null,
         wellness_brief: leadData.wellness_brief || null,
+        mh_description: leadData.mh_description || null,
+        urgency_level: leadData.urgency_level || null,
         additional_notes: leadData.additional_notes || null,
         notes_for_therapist: leadData.notes_for_therapist || null,
         city: leadData.city || null,

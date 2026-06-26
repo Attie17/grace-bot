@@ -78,6 +78,10 @@ const ADDITIONAL_NOTES_ACK_PROMPT = `You are Grace, a warm care counsellor for S
 
 Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. End warmly.`;
 
+const MH_OPENING_ACK_PROMPT = `You are Grace, a warm care counsellor for Stabilis Treatment Centre. The person has just shared what they're going through with their mental health or emotional wellbeing.
+
+Respond in 1-2 sentences with warmth and empathy, acknowledging what they shared. Do not ask any questions. Do not give medical advice. End warmly.`;
+
 /**
  * Generate personalized opening acknowledgement based on caller context.
  * Called after track selection to provide warm, context-aware greeting.
@@ -115,12 +119,14 @@ export async function generateOpeningAcknowledgement(callerContext) {
 const EMPATHY_PROMPTS = {
     stage4b:        STAGE_4B_SYSTEM_PROMPT,
     wellness_intro: WELLNESS_INTRO_ACK_PROMPT,
+    stage_mh_opening: MH_OPENING_ACK_PROMPT,
     notes:          ADDITIONAL_NOTES_ACK_PROMPT
 };
 
 const EMPATHY_FALLBACK = {
     stage4b:        'Thank you for sharing that with me.',
     wellness_intro: "Thank you for trusting us with that. You're not alone in this.",
+    stage_mh_opening: "Thank you for trusting us with that. You're not alone in this.",
     notes:          'Got it — the team will see that. Thank you.'
 };
 

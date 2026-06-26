@@ -199,7 +199,7 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
  *
  * Body: { sessionId, message, stageId? }   // stageId defaults to 'stage4b'
  */
-const CHAT_STAGES = new Set(['stage4b', 'stage5c', 'stage_city', 'stage7a', 'stage7b', 'stage7c', 'wellness_intro', 'notes']);
+const CHAT_STAGES = new Set(['stage4b', 'stage5c', 'stage_city', 'stage7a', 'stage7b', 'stage7c', 'wellness_intro', 'stage_mh_opening', 'notes']);
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { sessionId, message, stageId = 'stage4b' } = req.body;
