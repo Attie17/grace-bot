@@ -85,19 +85,26 @@ const stages = {
     },
 
     stage5: {
-        prompt: () => ({
-            messages: [
-                "Here's something that often surprises people — Stabilis is fully covered by most medical aids, including Discovery, Momentum, Bonitas, Bankmed, and GEMS.",
-                'Do you have medical aid?'
-            ],
-            inputType: 'buttons',
-            options: [
-                { label: '✅ Yes, I have medical aid',   value: 'Yes' },
-                { label: '💳 No — paying privately',     value: 'No' },
-                { label: '🤔 Not sure / need to check',  value: 'Unsure' }
-            ],
-            stageId: 'stage5'
-        }),
+        prompt: (leadData) => {
+            const isProfessional = leadData?.who_for === 'professional';
+            const medicalAidQuestion = isProfessional 
+                ? 'Does the young person have medical aid cover - for example through a family plan?'
+                : 'Do you have medical aid?';
+            
+            return {
+                messages: [
+                    "Here's something that often surprises people — Stabilis is fully covered by most medical aids, including Discovery, Momentum, Bonitas, Bankmed, and GEMS.",
+                    medicalAidQuestion
+                ],
+                inputType: 'buttons',
+                options: [
+                    { label: '✅ Yes, I have medical aid',   value: 'Yes' },
+                    { label: '💳 No — paying privately',     value: 'No' },
+                    { label: '🤔 Not sure / need to check',  value: 'Unsure' }
+                ],
+                stageId: 'stage5'
+            };
+        },
         accept: (value, leadData) => {
             leadData.medical_aid = value;
             if (value === 'Yes') {
@@ -235,7 +242,13 @@ const stages = {
         accept: (value, leadData) => {
             const name = value.trim();
             leadData.referred_name = name;
-            // Save to notes for therapist
+            
+            // Professional path - check guardian awareness before proceeding
+            if (leadData.who_for === 'professional') {
+                return { next: 'stage_professional_consent' };
+            }
+            
+            // Save to notes for therapist (non-professional path)
             const relationLabel = {
                 'child': 'child/teenager',
                 'partner': 'partner',
@@ -279,6 +292,34 @@ const stages = {
         }
     },
 
+    stage_professional_consent: {
+        prompt: () => ({
+            messages: ["Are the young person's parents or guardians aware of this referral?"],
+            inputType: 'buttons',
+            options: [
+                { label: '✅ Yes - they are supportive',          value: 'aware_supportive' },
+                { label: '⚠️ Yes - but they have concerns',       value: 'aware_concerns'  },
+                { label: '❓ No - not yet',                       value: 'not_aware'       },
+                { label: '🚨 This is a safeguarding situation',   value: 'safeguarding'    }
+            ],
+            stageId: 'stage_professional_consent'
+        }),
+        accept: (value, leadData) => {
+            leadData.guardian_relation = value;
+            
+            if (value === 'safeguarding') {
+                leadData.urgency_level = 'urgent';
+                leadData.urgent = true;
+                const safeguardingNote = 'SAFEGUARDING - do not contact parents';
+                leadData.notes_for_therapist = leadData.notes_for_therapist 
+                    ? `${safeguardingNote}. ${leadData.notes_for_therapist}`
+                    : safeguardingNote;
+            }
+            
+            return { next: 'stage_track' };
+        }
+    },
+
     stage_confidentiality_assurance: {
         prompt: (leadData) => {
             const name = leadData.referred_name || 'them';
@@ -313,17 +354,37 @@ const stages = {
     stage_professional_ack: {
         prompt: () => ({
             messages: [
-                'Thank you for your professional referral.',
-                'We appreciate your trust in Stabilis. Our team will reach out to discuss the best way to support this individual.'
+                'Thank you for reaching out on behalf of a young person in your care.',
+                "We'll ask a few quick questions so our team can follow up with you directly. Please note that parental or guardian consent will be needed before treatment can begin - our team will guide you through that when they call."
             ],
-            inputType: 'buttons',
-            options: [
-                { label: 'Continue', value: 'continue' }
-            ],
+            inputType: 'none',
             stageId: 'stage_professional_ack'
         }),
         accept: (value, leadData) => {
-            return { next: 'stage_track' };
+            return { 
+                next: 'stage_professional_role',
+                autoAdvance: true
+            };
+        }
+    },
+
+    stage_professional_role: {
+        prompt: () => ({
+            messages: ['What is your role?'],
+            inputType: 'buttons',
+            options: [
+                { label: '🏫 School counsellor / teacher',    value: 'school'  },
+                { label: '👤 Social worker',                  value: 'social_worker' },
+                { label: '🤝 CBO / NGO worker',               value: 'cbo'     },
+                { label: '🏥 Healthcare professional',        value: 'healthcare' },
+                { label: '⛪ Community / faith leader',       value: 'community' },
+                { label: '📋 Other',                          value: 'other'   }
+            ],
+            stageId: 'stage_professional_role'
+        }),
+        accept: (value, leadData) => {
+            leadData.caller_type = value;
+            return { next: 'stage_referred_name' };
         }
     },
 
@@ -617,17 +678,27 @@ const stages = {
     closing: {
         prompt: (leadData) => {
             const name = leadData.contact_name || 'there';
-            const messages = leadData.urgent
-                ? [
-                      `We will contact you as soon as possible, ${name}. If we're able to accommodate you, we'll confirm all the details when we call. You've made the right decision reaching out today.`,
-                      'Please keep your phone nearby.',
-                      "In the meantime, if the situation becomes an emergency at any point, please don't hesitate to call Netcare 911 on 082 911 or the public ambulance on 10177. They are there for exactly these moments. 💚"
-                  ]
-                : [
-                      `Thank you so much, ${name}. You've just taken one of the bravest steps there is.`,
-                      'One of our staff members will be in touch with you soon. Please keep your phone nearby.',
-                      'And remember — if anything feels urgent before then, Netcare 911 on 082 911 is always available. We care about you. 💚'
-                  ];
+            const isProfessional = leadData?.who_for === 'professional';
+            
+            let messages;
+            if (isProfessional) {
+                messages = [
+                    `Thank you, ${name}. One of our team will be in touch with you during your preferred time to discuss the referral and next steps. We appreciate the care you are taking for this young person.`
+                ];
+            } else if (leadData.urgent) {
+                messages = [
+                    `We will contact you as soon as possible, ${name}. If we're able to accommodate you, we'll confirm all the details when we call. You've made the right decision reaching out today.`,
+                    'Please keep your phone nearby.',
+                    "In the meantime, if the situation becomes an emergency at any point, please don't hesitate to call Netcare 911 on 082 911 or the public ambulance on 10177. They are there for exactly these moments. 💚"
+                ];
+            } else {
+                messages = [
+                    `Thank you so much, ${name}. You've just taken one of the bravest steps there is.`,
+                    'One of our staff members will be in touch with you soon. Please keep your phone nearby.',
+                    'And remember — if anything feels urgent before then, Netcare 911 on 082 911 is always available. We care about you. 💚'
+                ];
+            }
+            
             return {
                 messages,
                 inputType: 'none',
