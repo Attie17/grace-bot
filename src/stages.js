@@ -290,13 +290,9 @@ const stages = {
             const name = leadData.referred_name || 'them';
             return {
                 messages: [
-                    `Thank you for reaching out on ${name}'s behalf.`,
-                    'Everything shared here is confidential, and our team will handle this with care and professionalism.'
+                    `Just so you know — everything you share here is completely confidential and will not be shared with any third party. We will only contact ${name} if you specifically ask us to. Our team will call you back first, and you can decide together how to handle next steps.`
                 ],
-                inputType: 'buttons',
-                options: [
-                    { label: 'Continue', value: 'continue' }
-                ],
+                inputType: 'none',
                 stageId: 'stage_confidentiality_assurance'
             };
         },
@@ -307,16 +303,11 @@ const stages = {
 
     stage_minor_confidentiality: {
         prompt: (leadData) => {
-            const name = leadData.referred_name || 'your child';
             return {
                 messages: [
-                    `Thank you for reaching out for ${name}.`,
-                    'Working with young people requires special care. Our team is experienced in providing age-appropriate support, and everything discussed will be handled with sensitivity and confidentiality.'
+                    'Everything you share here is completely confidential. Our team will contact you first — we will not reach out to your child directly without discussing it with you. You're in control of next steps.'
                 ],
-                inputType: 'buttons',
-                options: [
-                    { label: 'Continue', value: 'continue' }
-                ],
+                inputType: 'none',
                 stageId: 'stage_minor_confidentiality'
             };
         },
