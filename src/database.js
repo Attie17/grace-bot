@@ -96,6 +96,7 @@ export async function createLead(sessionId, brief) {
             who_for: brief.who_for || null,
             caller_relation: brief.caller_relation || null,
             referred_name: brief.referred_name || null,
+            track: brief.track || null,
             substance_primary: brief.substance_primary,
             usage_pattern: brief.usage_pattern,
             previous_treatment: validEnum(brief.previous_treatment, ['none', 'once', 'multiple'], 'none'),

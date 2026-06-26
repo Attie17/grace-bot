@@ -42,7 +42,7 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
                 logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
             });
-        } else if ((priority === 'HIGH' || brief?.involves_minor) && brief) {
+        } else if ((priority === 'HIGH' || brief?.involves_minor || brief?.urgency_level === 'crisis') && brief) {
             sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
                 logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
             });
