@@ -678,24 +678,48 @@ const stages = {
     closing: {
         prompt: (leadData) => {
             const name = leadData.contact_name || 'there';
-            const isProfessional = leadData?.who_for === 'professional';
-            
             let messages;
-            if (isProfessional) {
+            
+            // Priority 1: Crisis urgency
+            if (leadData.urgency_level === 'crisis') {
                 messages = [
-                    `Thank you, ${name}. One of our team will be in touch with you during your preferred time to discuss the referral and next steps. We appreciate the care you are taking for this young person.`
+                    `Please reach out to emergency services if you are in immediate danger (10177 or Netcare 911: 082 911). Our team will contact you as a priority, ${name}.`
                 ];
-            } else if (leadData.urgent) {
+            }
+            // Priority 2: Professional referrals
+            else if (leadData.who_for === 'professional' || 
+                     leadData.caller_type === 'school' || 
+                     leadData.caller_type === 'social_worker' ||
+                     leadData.caller_type === 'healthcare' ||
+                     leadData.caller_type === 'cbo' ||
+                     leadData.caller_type === 'community' ||
+                     leadData.caller_type === 'other') {
                 messages = [
-                    `We will contact you as soon as possible, ${name}. If we're able to accommodate you, we'll confirm all the details when we call. You've made the right decision reaching out today.`,
-                    'Please keep your phone nearby.',
-                    "In the meantime, if the situation becomes an emergency at any point, please don't hesitate to call Netcare 911 on 082 911 or the public ambulance on 10177. They are there for exactly these moments. 💚"
+                    `Thank you, ${name}. One of our team will be in touch during your preferred time to discuss the referral and next steps. We appreciate the care you are taking for this young person.`
                 ];
-            } else {
+            }
+            // Priority 3: Involves minor
+            else if (leadData.involves_minor) {
                 messages = [
-                    `Thank you so much, ${name}. You've just taken one of the bravest steps there is.`,
-                    'One of our staff members will be in touch with you soon. Please keep your phone nearby.',
-                    'And remember — if anything feels urgent before then, Netcare 911 on 082 911 is always available. We care about you. 💚'
+                    `Thank you, ${name}. Our team has experience working with young people and their families. Whoever calls you will be kind and non-judgmental - you've done the right thing reaching out.`
+                ];
+            }
+            // Priority 4: Third party (not myself)
+            else if (leadData.who_for && leadData.who_for !== 'myself') {
+                messages = [
+                    `We will be in touch with you as soon as possible, ${name}. Our team will talk you through all the options - you don't have to figure this out alone.`
+                ];
+            }
+            // Priority 5: Mental health track
+            else if (leadData.track === 'mental_health') {
+                messages = [
+                    `Thank you, ${name}. You've just taken one of the bravest steps there is. Our team will be in touch soon.`
+                ];
+            }
+            // Default
+            else {
+                messages = [
+                    `Thank you, ${name}. You've made the right decision reaching out today. Our team will be in touch as soon as possible.`
                 ];
             }
             
