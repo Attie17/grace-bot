@@ -290,7 +290,7 @@ const stages = {
             const name = leadData.referred_name || 'them';
             return {
                 messages: [
-                    `Just so you know — everything you share here is completely confidential and will not be shared with any third party. We will only contact ${name} if you specifically ask us to. Our team will call you back first, and you can decide together how to handle next steps.`
+                    `Just so you know - everything you share here is completely confidential and will not be shared with any third party. We will only contact ${name} if you specifically ask us to. Our team will call you back first, and you can decide together how to handle next steps.`
                 ],
                 inputType: 'none',
                 stageId: 'stage_confidentiality_assurance'
@@ -305,7 +305,7 @@ const stages = {
         prompt: (leadData) => {
             return {
                 messages: [
-                    'Everything you share here is completely confidential. Our team will contact you first — we will not reach out to your child directly without discussing it with you. You're in control of next steps.'
+                    'Everything you share here is completely confidential. Our team will contact you first - we will not reach out to your child directly without discussing it with you. You\'re in control of next steps.'
                 ],
                 inputType: 'none',
                 stageId: 'stage_minor_confidentiality'
