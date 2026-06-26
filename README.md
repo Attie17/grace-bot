@@ -80,19 +80,25 @@ StabilisBot/
       - Error logging and monitoring
       - Supabase connection pooling
 
-- [x] **C. Grace Bot minor patch** — COMPLETE (deployed 26 June 2026)
+- [x] **C. Grace Bot minor patch** — COMPLETE (26 June 2026)
       - Database constraint fixes (urgency_level mapping)
       - Professional caller_type values expanded
       - Track field storage added
       - Crisis alert trigger on urgency_level
       - Implementation checklist maintained
 
-- [ ] **D. Grace Bot flow redesign (Prompt F2)**
-      - **Six distinct flows** replacing single adult flow
+- [x] **D. Grace Bot flow redesign (Prompt F2)** — COMPLETE (26 June 2026)
+      - ✅ Six distinct flows implemented and validated
+      - ✅ Relationship pathways (myself / someone_else / professional / i_am_under_18)
+      - ✅ Mental health crisis detection with emergency resources
+      - ✅ Guardian capture for minors (self-identifying and third-party)
+      - ✅ Context-aware AI acknowledgements (Haiku-powered)
+      - ✅ Professional referral pathway with safeguarding flags
+      - ✅ 7 end-to-end test scenarios passed
+      - ✅ Database migrations 009 & 010 applied
+      - ✅ Deployed to production (commit b8f63cb)
       - See Prompt F2 spec in Section 2.8 (detailed specification)
-      - **Deadline**: Must complete before SANCA goes live 1 August 2026
-      - **Prerequisites**: Do not start until v1.1 regression test is clean
-      - **Deliverables**: Full end-to-end testing of all six flow scenarios
+      - See tests/TEST_RESULTS.md for validation report
 
 - [ ] **E. SANCA integration** — Target: 1 August 2026
       - Dual branding support (Stabilis + SANCA)
@@ -105,6 +111,35 @@ StabilisBot/
       - Conversion funnel analysis
       - A/B testing framework
       - Clinical insights dashboard
+
+---
+
+## 0.6 Next Session — Start Here
+
+**Pre-deployment checklist complete** ✅  
+**Production status**: All systems operational
+
+**Immediate priorities (in order):**
+
+1. **Section 0.5 Item A** — Merge `feature/v1.1` to main
+   - Run full regression test suite first
+   - Target completion: 17 July 2026
+   - Verify no conflicts with Prompt F2 implementation
+
+2. **Section 0.5 Item B** — Pre-load SANCA centre registry
+   - 30 organizations, 63 service points
+   - Data entry task (manual or scripted)
+   - Required before SANCA integration (Item E)
+
+3. **NeoModus embed on stabilistc.co.za**
+   - Can now proceed safely — minor handling is live
+   - Prompt F2 validated in production
+   - All clinical pathways tested
+
+4. **Begin Prompt G** — Person model migration
+   - First v2.0 architecture task
+   - Separate Person entity from Lead
+   - Foundation for multi-referral tracking
 
 ---
 
