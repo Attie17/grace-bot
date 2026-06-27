@@ -87,9 +87,11 @@ const stages = {
     stage5: {
         prompt: (leadData) => {
             const isProfessional = leadData?.who_for === 'professional';
-            const medicalAidQuestion = isProfessional 
-                ? 'Does the young person have medical aid cover - for example through a family plan?'
-                : 'Do you have medical aid?';
+            const medicalAidQuestion = isProfessional
+                ? 'Does the young person have medical aid cover — for example through a family plan?'
+                : leadData?.involves_minor
+                ? 'Does your family have medical aid cover that might include treatment?'
+                : 'Do you have medical aid, or are you looking for government-funded support?';
             
             return {
                 messages: [
