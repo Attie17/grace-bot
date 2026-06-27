@@ -55,6 +55,13 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             await sendCrisisEmail({ sessionId, type, lastMessage });
         }
 
+        // Notify Sobriety Journey of new admission (background, non-blocking)
+        if (brief && leadId) {
+            notifySobrietyJourney(brief, leadId).catch(err => {
+                logger.warn({ error: err.message, leadId }, 'SJ webhook notification failed (non-blocking)');
+            });
+        }
+
         logger.info({ leadId, priority }, 'Therapist notified (email sent)');
 
     } catch (error) {
@@ -315,5 +322,42 @@ async function sendCrisisEmail({ sessionId, type, lastMessage }) {
             subject: `🚨 CRISIS ALERT — Grace Bot`,
             html: crisisHtml
         });
+    }
+}
+
+/**
+ * Notify Sobriety Journey of new admission.
+ * Posts the full clinical brief to SJ webhook endpoint for their intake system.
+ * Non-blocking — failures logged but don't affect Grace Bot flow.
+ */
+async function notifySobrietyJourney(brief, leadId) {
+    const endpoint = process.env.SJ_WEBHOOK_URL;
+    const secret = process.env.SJ_WEBHOOK_SECRET;
+    
+    if (!endpoint) {
+        logger.warn('SJ_WEBHOOK_URL not set — skipping SJ notification');
+        return;
+    }
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-webhook-secret': secret || ''
+            },
+            body: JSON.stringify({
+                grace_lead_id: leadId,
+                ...brief
+            })
+        });
+        
+        if (!response.ok) {
+            logger.warn({ status: response.status }, 'SJ webhook responded with error');
+        } else {
+            logger.info({ leadId }, 'SJ webhook notified successfully');
+        }
+    } catch (err) {
+        logger.warn({ error: err.message }, 'SJ webhook failed (non-blocking)');
     }
 }
