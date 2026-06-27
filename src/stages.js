@@ -864,6 +864,7 @@ export function buildClinicalBrief(leadData) {
         caller_age_band: leadData.caller_age_band || 'adult',
         guardian_name: leadData.guardian_name || null,
         guardian_phone: leadData.guardian_phone || null,
-        guardian_relation: leadData.guardian_relation || null
+        guardian_relation: leadData.guardian_relation || null,
+        funding_source: leadData.funding_source || null
     };
 }

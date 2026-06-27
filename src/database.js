@@ -121,6 +121,7 @@ export async function createLead(sessionId, brief) {
             guardian_name: brief.guardian_name || null,
             guardian_phone: brief.guardian_phone || null,
             guardian_relation: brief.guardian_relation || null,
+            funding_source: brief.funding_source || null,
             utm_source: brief.utm_source || null,
             utm_medium: brief.utm_medium || null,
             utm_campaign: brief.utm_campaign || null,
