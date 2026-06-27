@@ -100,6 +100,7 @@ const stages = {
                 options: [
                     { label: '✅ Yes, I have medical aid',   value: 'Yes' },
                     { label: '💳 No — paying privately',     value: 'No' },
+                    { label: '🏛️ I need government-funded help', value: 'dsd' },
                     { label: '🤔 Not sure / need to check',  value: 'Unsure' }
                 ],
                 stageId: 'stage5'
@@ -119,6 +120,14 @@ const stages = {
                         'No problem at all. Our private rate is R1,500 per day, and we offer a debit order facility to spread the cost.',
                         'Payment arrangements may also be possible — our team will go through all the options with you when they call.'
                     ],
+                    next: 'stage_city'
+                };
+            }
+            if (value === 'dsd') {
+                leadData.medical_aid = 'dsd';
+                leadData.funding_source = 'dsd_subsidy';
+                return {
+                    ack: ["Understood — our team will connect you with the right government-funded support. There are options available and our counsellor will guide you through them when they call."],
                     next: 'stage_city'
                 };
             }
