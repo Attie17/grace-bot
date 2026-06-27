@@ -279,8 +279,8 @@ async function sendEmail({ leadId, priority, brief }) {
         html
     });
 
-    // Also send to CEO for HIGH priority leads
-    if (priority === 'HIGH' && process.env.CEO_EMAIL && process.env.CEO_EMAIL !== process.env.RECEPTION_EMAIL) {
+    // Also send to CEO on every completed lead
+    if (process.env.CEO_EMAIL && process.env.CEO_EMAIL !== process.env.RECEPTION_EMAIL) {
         await emailTransporter.sendMail({
             from: process.env.SMTP_FROM,
             to: process.env.CEO_EMAIL,
