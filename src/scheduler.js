@@ -134,8 +134,73 @@ export async function sendDailySummary() {
 }
 
 /**
- * Start the daily scheduler.
- * Runs at 15:00 UTC = 17:00 SAST every day.
+ * Send the weekly summary email to CEO.
+ * Same format as daily CSV, runs Monday 08:00 SAST (06:00 UTC).
+ */
+export async function sendWeeklySummary() {
+    if (!process.env.CEO_EMAIL) {
+        logger.warn('CEO_EMAIL not configured — skipping weekly summary');
+        return;
+    }
+
+    try {
+        const leads = await getAllLeads();
+
+        const today = new Date();
+        const ddmmyyyy = today.toLocaleDateString('en-ZA', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            timeZone: 'Africa/Johannesburg'
+        }).replace(/\//g, '-'); // DD-MM-YYYY
+
+        const csv = leadsToCSV(leads);
+        const filename = `Grace-Leads-Weekly-${ddmmyyyy}.csv`;
+
+        const subject = `Grace Bot — Weekly Lead Summary [${ddmmyyyy}] — ${leads.length} total leads`;
+
+        const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px;">
+            <div style="background: #2E5A87; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 20px;">Grace Bot — Weekly Summary</h1>
+                <p style="margin: 6px 0 0; opacity: 0.85;">${ddmmyyyy}</p>
+            </div>
+            <div style="padding: 24px; background: #f9f9f9;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total leads (all time)</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-size: 18px; font-weight: bold; color: #2E5A87;">${leads.length}</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="padding: 16px 24px; font-size: 12px; color: #888; text-align: center;">
+                Full cumulative lead list attached as ${filename}
+            </div>
+        </div>`;
+
+        await emailTransporter.sendMail({
+            from: process.env.SMTP_FROM,
+            to: process.env.CEO_EMAIL,
+            subject,
+            html,
+            attachments: [
+                {
+                    filename,
+                    content: csv,
+                    contentType: 'text/csv'
+                }
+            ]
+        });
+
+        logger.info({ total: leads.length }, 'Weekly summary email sent to CEO');
+
+    } catch (error) {
+        logger.error({ error: error.message }, 'Failed to send weekly summary');
+    }
+}
+
+/**
+ * Start the daily and weekly schedulers.
+ * Daily: 15:00 UTC = 17:00 SAST every day.
+ * Weekly: 06:00 UTC = 08:00 SAST every Monday.
  */
 export function startScheduler() {
     cron.schedule('0 15 * * *', () => {
@@ -145,5 +210,13 @@ export function startScheduler() {
         timezone: 'UTC'
     });
 
+    cron.schedule('0 6 * * 1', () => {
+        logger.info('Running weekly summary job');
+        sendWeeklySummary();
+    }, {
+        timezone: 'UTC'
+    });
+
     logger.info('Daily summary scheduler started (17:00 SAST / 15:00 UTC)');
+    logger.info('Weekly summary scheduler started (08:00 SAST / 06:00 UTC Monday)');
 }

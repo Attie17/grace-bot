@@ -868,12 +868,14 @@ const stages = {
     closing: {
         prompt: (leadData) => {
             const name = leadData.contact_name || 'there';
+            const emergencyLine = 'If you or someone you know is in immediate danger, please call Netcare 911 on 082 911 or the emergency services on 10177.';
             let messages;
             
             // Priority 1: Crisis urgency
             if (leadData.urgency_level === 'crisis') {
                 messages = [
-                    `Please reach out to emergency services if you are in immediate danger (10177 or Netcare 911: 082 911). Our team will contact you as a priority, ${name}.`
+                    `Please reach out to emergency services if you are in immediate danger (10177 or Netcare 911: 082 911). Our team will contact you as a priority, ${name}.`,
+                    emergencyLine
                 ];
             }
             // Priority 2: Professional referrals
@@ -885,31 +887,36 @@ const stages = {
                      leadData.caller_type === 'community' ||
                      leadData.caller_type === 'other') {
                 messages = [
-                    `Thank you, ${name}. One of our team will be in touch during your preferred time to discuss the referral and next steps. We appreciate the care you are taking for this young person.`
+                    `Thank you, ${name}. One of our team will be in touch during your preferred time to discuss the referral and next steps. We appreciate the care you are taking for this young person.`,
+                    emergencyLine
                 ];
             }
             // Priority 3: Involves minor
             else if (leadData.involves_minor) {
                 messages = [
-                    `Thank you, ${name}. Our team has experience working with young people and their families. Whoever calls you will be kind and non-judgmental - you've done the right thing reaching out.`
+                    `Thank you, ${name}. Our team has experience working with young people and their families. Whoever calls you will be kind and non-judgmental - you've done the right thing reaching out.`,
+                    emergencyLine
                 ];
             }
             // Priority 4: Third party (not myself)
             else if (leadData.who_for && leadData.who_for !== 'myself') {
                 messages = [
-                    `We will be in touch with you as soon as possible, ${name}. Our team will talk you through all the options - you don't have to figure this out alone.`
+                    `We will be in touch with you as soon as possible, ${name}. Our team will talk you through all the options - you don't have to figure this out alone.`,
+                    emergencyLine
                 ];
             }
             // Priority 5: Mental health track
             else if (leadData.track === 'mental_health') {
                 messages = [
-                    `Thank you, ${name}. You've just taken one of the bravest steps there is. Our team will be in touch soon.`
+                    `Thank you, ${name}. You've just taken one of the bravest steps there is. Our team will be in touch soon.`,
+                    emergencyLine
                 ];
             }
             // Default
             else {
                 messages = [
-                    `Thank you, ${name}. You've made the right decision reaching out today. Our team will be in touch as soon as possible.`
+                    `Thank you, ${name}. You've made the right decision reaching out today. Our team will be in touch as soon as possible.`,
+                    emergencyLine
                 ];
             }
             
