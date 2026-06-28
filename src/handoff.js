@@ -237,6 +237,33 @@ async function sendEmail({ leadId, priority, brief }) {
 
         ${clinicalBlock}
 
+        ${brief.audit_c_score !== null ? `
+        <div style="padding: 20px;">
+            <h2 style="color: #2E5A87;">AUDIT-C Screening Results</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background: #f0f0f0;">
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>AUDIT-C Score</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>${brief.audit_c_score} / 12</strong></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>Risk Tier</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong style="color: ${brief.audit_c_tier === 'indicated' ? '#c0392b' : brief.audit_c_tier === 'selective' ? '#e67e22' : '#27ae60'};">${escapeHtml(brief.audit_c_tier)}</strong></td>
+                </tr>
+            </table>
+            <div style="margin-top: 10px; background: #F9F9F9; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.5;">
+                <strong>Tier Guide:</strong><br>
+                • <strong>Universal</strong> (0–2): Low risk — general information appropriate<br>
+                • <strong>Selective</strong> (3–5): Moderate risk — brief intervention recommended<br>
+                • <strong>Indicated</strong> (6–12): High risk — professional assessment required
+            </div>
+        </div>
+        ` : `
+        <div style="padding: 20px;">
+            <h2 style="color: #2E5A87;">AUDIT-C Screening</h2>
+            <p style="color: #888;">AUDIT-C screening not completed during intake</p>
+        </div>
+        `}
+
         <div style="padding: 20px;">
             <h2 style="color: #2E5A87;">Lead Source</h2>
             <table style="width: 100%; border-collapse: collapse;">

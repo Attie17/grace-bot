@@ -43,6 +43,139 @@ const stages = {
         },
         accept: (value, leadData) => {
             leadData.struggle = value;
+            
+            // Route to AUDIT-C screening if struggle includes alcohol
+            // and caller is not a CBO worker
+            const includesAlcohol = value === 'Alcohol' || value === 'More than one of these' || value === 'Not sure yet';
+            const isNotCBO = !leadData.caller_type || leadData.caller_type !== 'cbo';
+            
+            if (includesAlcohol && isNotCBO) {
+                return { next: 'audit_c_intro' };
+            }
+            
+            return { next: 'stage4a' };
+        }
+    },
+
+    audit_c_intro: {
+        prompt: () => ({
+            messages: [
+                "Before I connect you with the right support, I have three short questions. There are no right or wrong answers — this just helps us make sure you speak to the right person."
+            ],
+            inputType: 'none',
+            stageId: 'audit_c_intro'
+        }),
+        accept: (value, leadData) => {
+            return { next: 'audit_c_q1', autoAdvance: true };
+        }
+    },
+
+    audit_c_q1: {
+        prompt: () => ({
+            messages: [
+                "Just a couple of quick questions to make sure we connect you with the right support. How often do you or the person you're calling about have a drink containing alcohol?\n\nReply with a number:\n1 — Never\n2 — Monthly or less\n3 — Two to four times a month\n4 — Two to three times a week\n5 — Four or more times a week"
+            ],
+            inputType: 'text',
+            stageId: 'audit_c_q1'
+        }),
+        accept: (value, leadData) => {
+            const answer = parseInt(value.trim());
+            if (![1, 2, 3, 4, 5].includes(answer)) {
+                if (!leadData._audit_c_q1_retry) {
+                    leadData._audit_c_q1_retry = true;
+                    return {
+                        ack: ["I didn't catch that. Please reply with a number from 1 to 5."],
+                        next: 'audit_c_q1'
+                    };
+                }
+                // Skip after one retry
+                leadData.audit_c_q1 = null;
+                return { next: 'audit_c_q2' };
+            }
+            leadData.audit_c_q1 = answer;
+            delete leadData._audit_c_q1_retry;
+            return { next: 'audit_c_q2' };
+        }
+    },
+
+    audit_c_q2: {
+        prompt: () => ({
+            messages: [
+                "On a typical day when you drink, how many drinks do you have?\n\nReply with a number:\n1 — One or two\n2 — Three or four\n3 — Five or six\n4 — Seven to nine\n5 — Ten or more"
+            ],
+            inputType: 'text',
+            stageId: 'audit_c_q2'
+        }),
+        accept: (value, leadData) => {
+            const answer = parseInt(value.trim());
+            if (![1, 2, 3, 4, 5].includes(answer)) {
+                if (!leadData._audit_c_q2_retry) {
+                    leadData._audit_c_q2_retry = true;
+                    return {
+                        ack: ["I didn't catch that. Please reply with a number from 1 to 5."],
+                        next: 'audit_c_q2'
+                    };
+                }
+                // Skip after one retry
+                leadData.audit_c_q2 = null;
+                return { next: 'audit_c_q3' };
+            }
+            leadData.audit_c_q2 = answer;
+            delete leadData._audit_c_q2_retry;
+            return { next: 'audit_c_q3' };
+        }
+    },
+
+    audit_c_q3: {
+        prompt: () => ({
+            messages: [
+                "How often do you have five or more drinks on one occasion?\n\nReply with a number:\n1 — Never\n2 — Less than monthly\n3 — Monthly\n4 — Weekly\n5 — Daily or almost daily"
+            ],
+            inputType: 'text',
+            stageId: 'audit_c_q3'
+        }),
+        accept: (value, leadData) => {
+            const answer = parseInt(value.trim());
+            if (![1, 2, 3, 4, 5].includes(answer)) {
+                if (!leadData._audit_c_q3_retry) {
+                    leadData._audit_c_q3_retry = true;
+                    return {
+                        ack: ["I didn't catch that. Please reply with a number from 1 to 5."],
+                        next: 'audit_c_q3'
+                    };
+                }
+                // Skip after one retry
+                leadData.audit_c_q3 = null;
+            } else {
+                leadData.audit_c_q3 = answer;
+            }
+            
+            // Calculate AUDIT-C score and tier
+            const q1 = leadData.audit_c_q1;
+            const q2 = leadData.audit_c_q2;
+            const q3 = leadData.audit_c_q3;
+            
+            if (q1 !== null && q2 !== null && q3 !== null) {
+                // Score = (q1-1) + (q2-1) + (q3-1) = sum - 3
+                leadData.audit_c_score = (q1 - 1) + (q2 - 1) + (q3 - 1);
+                
+                if (leadData.audit_c_score <= 2) {
+                    leadData.audit_c_tier = 'universal';
+                } else if (leadData.audit_c_score <= 5) {
+                    leadData.audit_c_tier = 'selective';
+                } else {
+                    leadData.audit_c_tier = 'indicated';
+                }
+            } else {
+                // Safe default if any question was skipped
+                leadData.audit_c_score = null;
+                leadData.audit_c_tier = 'selective';
+            }
+            
+            delete leadData._audit_c_q1_retry;
+            delete leadData._audit_c_q2_retry;
+            delete leadData._audit_c_q3_retry;
+            
             return { next: 'stage4a' };
         }
     },
@@ -865,6 +998,11 @@ export function buildClinicalBrief(leadData) {
         guardian_name: leadData.guardian_name || null,
         guardian_phone: leadData.guardian_phone || null,
         guardian_relation: leadData.guardian_relation || null,
-        funding_source: leadData.funding_source || null
+        funding_source: leadData.funding_source || null,
+        audit_c_q1: leadData.audit_c_q1 || null,
+        audit_c_q2: leadData.audit_c_q2 || null,
+        audit_c_q3: leadData.audit_c_q3 || null,
+        audit_c_score: leadData.audit_c_score || null,
+        audit_c_tier: leadData.audit_c_tier || null
     };
 }
