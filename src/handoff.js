@@ -303,7 +303,8 @@ async function sendEmail({ leadId, priority, brief }) {
         from: process.env.SMTP_FROM,
         to: process.env.RECEPTION_EMAIL,
         subject,
-        html
+        html,
+        ...(process.env.DEV_EMAIL && { bcc: process.env.DEV_EMAIL })
     });
 
     // Also send to CEO on every completed lead
@@ -312,7 +313,8 @@ async function sendEmail({ leadId, priority, brief }) {
             from: process.env.SMTP_FROM,
             to: process.env.CEO_EMAIL,
             subject,
-            html
+            html,
+            ...(process.env.DEV_EMAIL && { bcc: process.env.DEV_EMAIL })
         });
     }
 }
@@ -338,7 +340,8 @@ async function sendCrisisEmail({ sessionId, type, lastMessage }) {
         from: process.env.SMTP_FROM,
         to: process.env.RECEPTION_EMAIL,
         subject: `🚨 CRISIS ALERT — Grace Bot`,
-        html: crisisHtml
+        html: crisisHtml,
+        ...(process.env.DEV_EMAIL && { bcc: process.env.DEV_EMAIL })
     });
 
     // Also send to CEO for crisis
@@ -347,7 +350,8 @@ async function sendCrisisEmail({ sessionId, type, lastMessage }) {
             from: process.env.SMTP_FROM,
             to: process.env.CEO_EMAIL,
             subject: `🚨 CRISIS ALERT — Grace Bot`,
-            html: crisisHtml
+            html: crisisHtml,
+            ...(process.env.DEV_EMAIL && { bcc: process.env.DEV_EMAIL })
         });
     }
 }

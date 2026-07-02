@@ -1,0 +1,43 @@
+#	Created	Name	Phone	Email	City	Language	Track	Urgency	Priority	Status	For Whom	Caller Relation	Referred Name	Caller Type	Involves Minor	Age Band	Guardian Name	Guardian Phone	Substance Primary	Usage Pattern	Mental Health	Medical Flags	Medical Aid	Readiness Score	Notes for Therapist	MH Description	AUDIT-C Score	UTM Source	Lead ID
+1	2026/06/26, 19:45:30	Alex	0821111111	alex@test.com	Cape Town	english	unknown	crisis	NORMAL	new	self				No	adult					unknown		No		
+
+Mental health description: severe crisis situation	severe crisis situation			fa8a8d26-09ca-4b81-8532-d1652b9a7266
+2	2026/06/26, 19:41:13	John	0821111111	john@test.com	Cape Town	english	unknown	urgent	NORMAL	new	self				No	adult					unknown		No		
+
+Mental health description: severe crisis	severe crisis			7a8f34a2-2d3e-4413-be38-4e57cfc8ef40
+3	2026/06/26, 15:47:50	Nomsa	072 777 8888	nomsa@example.com	Port Elizabeth	english	unknown	normal	NORMAL	new	family			family_member	No	adult			Drugs or substances		unknown		Unsure						4443ecc4-c9ac-426a-bea2-e0c099bf53fd
+4	2026/06/26, 15:43:33	Jordan	076 111 2222	jordan@example.com	Durban	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Unsure						4bd7d654-792b-44c1-979a-6bd3423c4f9d
+5	2026/06/26, 15:40:30	Alex	083 222 3333	alex@example.com		english	unknown	normal	NORMAL	new	self				No	adult					unknown								a366f886-2002-4a44-a57b-cf5d0e3cf75b
+6	2026/06/26, 15:19:06	Ms Dlamini	012 444 5678	dlamini@school.edu.za	Pretoria	english	unknown	normal	NORMAL	new	self			cbo_school	No	adult			More than one of these		unknown		No						f9a6922a-fac2-4f5d-8dbe-142f8ebce63f
+7	2026/06/26, 15:02:19	Mark	071 888 9999	mark@example.com	Cape Town	english	unknown	normal	NORMAL	new	self			under_18	YES	minor_other	Sarah	082 555 1234	Drugs or substances		unknown		Yes						9eac06a5-455a-4cfa-9f58-6b8c665cf8ba
+8	2026/06/26, 14:54:33	Jamie	071 333 4567	jamie@example.com	Johannesburg	english	unknown	normal	NORMAL	new	self			i_am_under_18	YES	minor_self	Yes, my mom Sarah	082 555 1234	Drugs or substances		unknown		Unsure						2f339c82-936d-47a9-abfb-67d424c53a26
+9	2026/06/25, 21:09:02	Clive Jr	0824516786	minor-test@example.com	Cape Town	english	unknown	normal	NORMAL	new	self			under_18	YES	minor_other	Clive	08255544425	Alcohol		unknown		No						3ae3c90d-53b2-46ec-ad63-7fc9a7806260
+10	2026/06/25, 21:02:45	Pete	0824516786	attie@ngwaverley.co.za	Pretoria	english	unknown	normal	NORMAL	new	self			under_18	No	adult			Drugs or substances		unknown		Yes						d16cc2a9-6d2a-4414-8eb4-15a8705e584a
+11	2026/06/25, 20:55:13	Pete	0824516786	attie@ngwaverley.co.za	Pretoria	english	unknown	normal	NORMAL	new	self			under_18	No	adult			Drugs or substances		unknown		Yes						4734ad5e-6892-4139-a2e5-5044431dfdac
+12	2026/06/25, 20:46:42	Victor	0824516786	attie@ngwaverley.co.za	Pretoria	english	unknown	normal	NORMAL	new	self			under_18	No	adult			Drugs or substances		unknown		Yes						3081db7f-3285-436d-93d8-76ea0ac7e69a
+13	2026/06/25, 20:38:27	Pete	0824516786	attie@ngwaverley.co.za	Pretoria	english	unknown	normal	NORMAL	new	self			under_18	No	adult			Drugs or substances		unknown		Yes						ba40565f-15d9-4ebc-93db-08cd2dd228b1
+14	2026/06/24, 14:20:27	Attie	0824185054		Pretoria	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						2dd08597-9800-4b3f-9110-505d35189608
+15	2026/06/24, 14:04:40	Attie	0824185054		Pretoria	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						243d6aff-04b1-4793-9430-409fe183de36
+16	2026/06/24, 12:34:31	Test User	+1287901404		Cape Town	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						423a0722-8ace-44f9-a313-102c27507416
+17	2026/06/24, 12:04:00	Attie	0824185054		Pretoria	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						ced77776-7231-419e-ac2b-cae1468541f8
+18	2026/06/24, 08:56:56	Karin	0823713121		Pretoria	english	unknown	normal	NORMAL	new	self			i_am_under_18	No	adult			Not sure yet		unknown		Yes						797b7feb-cb31-44b6-bd20-638d33eb72fe
+19	2026/06/23, 20:46:06	Test User	+5040769725		Cape Town	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						0bc79d40-6eb4-41fd-8a12-a340e8bf46b7
+20	2026/06/23, 20:45:07	Test User	+9501900249		Cape Town	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						05174044-c9de-446f-bfce-e2a2c03a64fa
+21	2026/06/23, 20:38:34	Test User	+8800580467		Cape Town	english	unknown	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						c536be1f-d81c-472b-ba9f-cc84dc8dc232
+22	2026/06/23, 15:24:37	Bettha	0837804044			english	unknown	normal	NORMAL	new	self				No	adult			Alcohol		unknown		No						43a11883-9756-42de-a3c8-67178ed44df1
+23	2026/06/23, 12:33:27	Attie	O			english	unknown	normal	NORMAL	new	self				No	adult			Alcohol		unknown		Yes						ebd4ba3f-b7a4-4e77-935f-95c8bcdb3801
+24	2026/06/23, 11:12:14	Attie	0824185054			english	unknown	normal	NORMAL	new	self				No	adult			alcohol	not specified	none	none	Discovery Health	9	Attie is seeking urgent help for alcohol dependency. First-time treatment seeker with no prior rehab experience. No reported physical or mental health complications. Discovery medical aid fully covers treatment. High motivation and readiness — wants to start immediately. Call during morning hours.				2dd27d69-81da-4ed6-9ed7-cae005a063cd
+25	2026/06/22, 20:57:50	Attie	0824185054		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Prescription medication		unknown		Yes						01136535-5f5a-4bcd-9661-fdd6959b8a78
+26	2026/06/22, 20:28:46	Attie	0824185054		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		No						27454b94-1fb4-438c-9cd0-500682ef281b
+27	2026/06/22, 19:42:11	Attie	0824185054		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						582148e5-a041-4e07-8277-0e1749cd443f
+28	2026/06/22, 19:22:06	Attie	0824185054			english	wellness	normal	NORMAL	new	self				No	adult					unknown				I need help to handle my anxiety.				7aa8f3e8-7436-4cd9-9ba5-fbc183b15eec
+29	2026/06/22, 17:05:04	Attie	0824185054		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		Yes						d2c180ed-f9b6-4f69-81b9-da40edcd230e
+30	2026/06/20, 20:12:02	Test User	0821234567		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		No						d600b3a9-ece1-4b25-ba19-76c9d568951c
+31	2026/06/20, 19:53:17	Test Urgent	0821234567		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		No						b395a610-64a5-4167-9732-5159a1fcc71f
+32	2026/06/20, 19:30:38	Test Urgent	0821234567		Pretoria	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		No						eb2b2f4f-777a-41d7-b512-7b78ffa5ed1d
+33	2026/06/20, 16:38:55	John Smith	+27821234567		Cape Town	english	sud	normal	NORMAL	new	self			myself	No	adult			Alcohol		unknown		No						b5b98504-64a7-480d-b776-b3bfbdcfad42
+34	2026/06/09, 12:34:53	Test User	+27761864119			english	unknown	normal	NORMAL	new	self				No	adult					unknown		No						0b35e428-3eb0-4ed3-9ff8-5116af3b2155
+35	2026/06/09, 12:08:50	Test User	+27761864119			english	unknown	normal	NORMAL	new	self				No	adult					unknown		No						63a2bf89-e225-497a-9a6e-dccf8ab2e0f2
+36	2026/06/09, 12:05:19	Test User	+27761864119			english	unknown	normal	NORMAL	new	self				No	adult					unknown		No						091a5416-cbc9-4e73-bdb8-f6db5a2626e0
+37	2026/06/09, 12:01:58	Test User	+27761864119			english	unknown	normal	NORMAL	new	self				No	adult					unknown		Yes						d457f2bf-d1ce-4a9e-bd10-bdeb17217485
+38	2026/06/09, 11:09:35	Attie	0824185054			english	unknown	normal	NORMAL	new	self				No	adult					unknown		Yes						fa895998-e149-4fc4-ad74-37dd5d42b7af

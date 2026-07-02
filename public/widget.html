@@ -549,6 +549,27 @@ function renderStage(payload) {
         clearButtons();
         setTextInput(true, 'Type your message…');
         if (payload.skippable) renderSkipButton();
+    } else if (payload.inputType === 'none') {
+        // Stages with inputType 'none' can't accept user input, so auto-advance after delay
+        clearButtons();
+        setTextInput(false);
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/stage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        stageId: payload.stageId,
+                        value: null
+                    })
+                });
+                const nextData = await res.json();
+                renderResponse(nextData);
+            } catch (err) {
+                console.error('Auto-advance error:', err);
+            }
+        }, 800);
     } else {
         clearButtons();
         setTextInput(false);
