@@ -36,6 +36,13 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
     const isCrisis = priority === 'CRISIS';
 
     try {
+        // Always notify reception via WhatsApp for every completed lead
+        if (brief) {
+            sendReceptionWhatsApp(brief).catch(err => {
+                logger.error({ error: err.message, leadId }, 'Reception WhatsApp failed');
+            });
+        }
+
         // Send WhatsApp in background (non-blocking) - don't wait
         // If WhatsApp fails, email will still be sent
         if (priority === 'CRISIS') {
@@ -108,6 +115,55 @@ async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
         }),
         new Promise((_, reject) => 
             setTimeout(() => reject(new Error('WhatsApp send timeout (30s)')), 30000)
+        )
+    ]);
+}
+
+/**
+ * Send WhatsApp intake summary to reception for every completed lead.
+ * Replaces broken email flow as primary notification method.
+ */
+async function sendReceptionWhatsApp(brief) {
+    if (!twilioClient || !process.env.RECEPTION_WHATSAPP || !brief) {
+        return Promise.resolve();
+    }
+
+    const urgencyEmoji =
+        brief.urgency_level === 'crisis' ? '🚨' :
+        brief.involves_minor ? '👶' :
+        brief.priority === 'HIGH' ? '⚠️' : '📋';
+
+    const lines = [
+        `${urgencyEmoji} *NEW GRACE INTAKE*`,
+        ``,
+        `👤 ${brief.contact_name || 'Unknown'}`,
+        `📞 ${brief.contact_phone || 'No phone'}`,
+        `🏙️ ${brief.city || 'City not provided'}`,
+        `💊 ${brief.substance_primary || brief.track || 'Not specified'}`,
+        `💳 ${brief.medical_aid || 'No medical aid'}`,
+        `⏰ Best time: ${brief.preferred_callback_time || 'Any time'}`,
+        `🎯 Readiness: ${brief.urgency || 'Not stated'}`,
+        `📊 AUDIT-C: ${brief.audit_c_score !== undefined ?
+            `Score ${brief.audit_c_score} (${brief.audit_c_tier})` :
+            'Not completed'}`,
+        brief.involves_minor ? `👶 MINOR — guardian contact required` : null,
+        ``,
+        `📝 ${brief.health_notes ?
+            brief.health_notes.substring(0, 200) : 'No health notes'}`,
+    ].filter(Boolean).join('\n');
+
+    const receptionNumber = process.env.RECEPTION_WHATSAPP.startsWith('whatsapp:')
+        ? process.env.RECEPTION_WHATSAPP
+        : `whatsapp:${process.env.RECEPTION_WHATSAPP}`;
+
+    return Promise.race([
+        twilioClient.messages.create({
+            from: process.env.TWILIO_WHATSAPP_NUMBER,
+            to: receptionNumber,
+            body: lines
+        }),
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Reception WhatsApp send timeout (30s)')), 30000)
         )
     ]);
 }
