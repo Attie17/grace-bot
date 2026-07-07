@@ -24,6 +24,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { detectCrisis, respondEmpathetically, getResponseWithCrisisDetection, generateOpeningAcknowledgement } from './claude-client.js';
+import { handleAIMessage } from './ai-grace.js';
 import {
     buildOpeningPayload,
     getStagePayload,
@@ -81,6 +82,20 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
     const { sessionId, stageId, value } = req.body;
     if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
 
+    // AI MODE: Route to Claude-powered conversation engine.
+    // Skip when value is null — those are scripted auto-advances (e.g. stage1b),
+    // not real user messages, and Claude rejects null content.
+    if (process.env.GRACE_MODE === 'ai' && stageId && value != null) {
+        try {
+            const result = await handleAIMessage(sessionId, value);
+            return res.json(result);
+        } catch (error) {
+            logger.error({ error: error.message, sessionId }, 'AI mode failed, falling back to scripted');
+            // Fall through to scripted mode on error
+        }
+    }
+
+    // SCRIPTED MODE: Original stage-based flow (default)
     try {
         const conversation = await loadConversation(sessionId);
         const metadata = conversation?.metadata || {};
@@ -151,24 +166,43 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
             });
 
             setImmediate(async () => {
+                console.log('🚀 LEAD CREATION STARTING for session:', sessionId);
                 try {
                     const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
+                    console.log('📋 Brief built:', {
+                        contact_name: brief.contact_name,
+                        contact_phone: brief.contact_phone,
+                        contact_email: brief.contact_email
+                    });
                     if (brief.contact_name && brief.contact_phone) {
+                        console.log('✅ Contact details present, creating lead...');
                         const leadId = await createLead(sessionId, brief);
+                        console.log('💾 Lead created with ID:', leadId);
                         await notifyTherapist({
                             sessionId,
                             leadId,
                             priority: leadData.urgent ? 'HIGH' : 'NORMAL',
                             brief
                         });
+                        console.log('📧 Therapist notified');
                         updatedMetadata.lead_created = true;
                         updatedMetadata.lead_id = leadId;
                         logger.info({ sessionId, leadId }, 'Lead qualified');
                     } else {
+                        console.log('⚠️ SKIPPING LEAD: Missing contact details', {
+                            has_name: !!brief.contact_name,
+                            has_phone: !!brief.contact_phone
+                        });
                         logger.warn({ sessionId }, 'Closing without contact details — skipping lead creation');
                     }
+                    console.log('💾 Saving conversation to DB...');
                     await saveConversation(sessionId, updatedMessages, updatedMetadata);
+                    console.log('✅ LEAD CREATION COMPLETE for session:', sessionId);
                 } catch (err) {
+                    console.error('❌ LEAD CREATION FAILED:', err);
+                    console.error('Session:', sessionId);
+                    console.error('Lead data:', JSON.stringify(leadData, null, 2));
+                    console.error('Updated metadata:', JSON.stringify(updatedMetadata, null, 2));
                     logger.error({ error: err.message, sessionId }, 'Background lead save failed');
                 }
             });

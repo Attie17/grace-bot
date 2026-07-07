@@ -13,7 +13,7 @@ const URGENT_VALUE = "As soon as possible — it's urgent";
 const stages = {
     stage1b: {
         prompt: () => ({
-            messages: ['Hi there! Let\'s get you connected with the right support. First, who are you reaching out for today?'],
+            messages: [],
             inputType: 'none',
             stageId: 'stage1b'
         }),
@@ -544,10 +544,10 @@ const stages = {
             messages: ['What brings you here?'],
             inputType: 'buttons',
             options: [
-                { label: '🍷 Substance use',           value: 'substance' },
+                { label: '🍷 Substance use',           value: 'sud' },
                 { label: '🧠 Emotional / mental health', value: 'mental_health' },
-                { label: '📱 Digital / screen / gaming', value: 'digital' },
-                { label: '🤔 Not sure',                value: 'not_sure' }
+                { label: '📱 Digital / screen / gaming', value: 'sud' },
+                { label: '🤔 Not sure',                value: 'sud' }
             ],
             stageId: 'stage_track'
         }),
@@ -961,7 +961,7 @@ export function advance(stageId, value, leadData = {}) {
 }
 
 export function buildClinicalBrief(leadData) {
-    const track = leadData.track || 'substance';
+    const track = leadData.track || 'sud';
     const urgency = leadData.urgent
         ? 'immediate'
         : track === 'mental_health' ? 'researching' : 'soon';

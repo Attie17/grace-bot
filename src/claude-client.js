@@ -12,7 +12,7 @@ import { logger } from './logger.js';
 
 let client = null;
 
-function getClient() {
+export function getClient() {
     if (!client) {
         client = new Anthropic({
             apiKey: process.env.ANTHROPIC_API_KEY,
