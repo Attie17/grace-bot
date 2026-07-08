@@ -65,6 +65,42 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/privacy', (req, res) => {
+    res.type('html').send(`<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy | Stabilis Treatment Centre</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2933; line-height: 1.6; max-width: 760px; margin: 0 auto; padding: 40px 20px; background: #faf8f5; }
+        h1 { color: #145c58; line-height: 1.2; }
+        h2 { color: #145c58; margin-top: 28px; }
+        a { color: #145c58; }
+    </style>
+</head>
+<body>
+    <h1>Privacy Policy</h1>
+    <p>Grace is the digital intake assistant for Stabilis Treatment Centre. Information you share is used to understand your situation, respond appropriately, and help the Stabilis team follow up where needed.</p>
+
+    <h2>What We Collect</h2>
+    <p>We may collect your name, contact details, general location, reason for reaching out, treatment or support preferences, and conversation details relevant to intake or referral.</p>
+
+    <h2>How We Use It</h2>
+    <p>Your information is used for intake, referral, safety triage, follow-up by Stabilis staff, and improving continuity of support. We do not use Grace for emergency response.</p>
+
+    <h2>Confidentiality</h2>
+    <p>Information is handled confidentially and shared only with appropriate Stabilis staff or referral partners involved in support or care coordination, unless disclosure is required for safety or by law.</p>
+
+    <h2>Emergencies</h2>
+    <p>Grace is not an emergency service. If there is immediate danger, call Netcare 911 on 082 911, emergency services on 10177, or go to the nearest emergency department.</p>
+
+    <h2>Contact</h2>
+    <p>For privacy questions, contact Stabilis Treatment Centre at <a href="mailto:reception@stabilistc.co.za">reception@stabilistc.co.za</a>.</p>
+</body>
+</html>`);
+});
+
 // Stage 1 opening — static text plus the next stage id the widget should request.
 app.get('/api/init', (req, res) => {
     res.json(buildOpeningPayload());
