@@ -129,6 +129,7 @@ body {
     font-size: 14px;
     line-height: 1.5;
     word-wrap: break-word;
+    white-space: pre-wrap;
     animation: slideIn 0.3s ease-out;
 }
 
@@ -172,6 +173,15 @@ body {
     text-align: center;
     border-radius: 8px;
     max-width: 90%;
+}
+
+.msg a {
+    color: #1a6b6b;
+    text-decoration: underline;
+}
+
+.msg.user a {
+    color: #E5FFFF;
 }
 
 .typing {
@@ -433,10 +443,21 @@ input.addEventListener('keydown', (e) => {
 
 sendBtn.addEventListener('click', submitText);
 
+function linkify(text) {
+    const escapeHtml = value => String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    return escapeHtml(text).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
 function addMessage(text, type = 'bot') {
     const div = document.createElement('div');
     div.className = `msg ${type}`;
-    div.textContent = text;
+    div.innerHTML = linkify(text);
     if (type === 'user') {
         const check = document.createElement('span');
         check.className = 'save-check';

@@ -95,7 +95,7 @@ export async function handleAIMessage(sessionId, userMessage) {
             !hasRealUrl
         ) {
             console.log('SAFETY NET Part 2: Grace closed without [INVITE_LINK] — appending automatically');
-            responseMessage += '\n\nHere is your link to get started: [INVITE_LINK]';
+            responseMessage += '\n\nHere is your invite to get started:\n\n[INVITE_LINK]\n\nClick the link above to create your free account.';
             inviteNeededMutable = true;
         }
         // ── END SAFETY NET ──
@@ -125,7 +125,7 @@ export async function handleAIMessage(sessionId, userMessage) {
                 );
             } else {
                 // Replace any placeholder variation with the real URL
-                responseMessage = responseMessage.replace(inviteRegex, inviteLink);
+                responseMessage = responseMessage.replace(inviteRegex, `\n\n${inviteLink}\n\n`);
             }
             
             // Remove WhatsApp-specific language that doesn't apply to URL delivery
@@ -134,7 +134,8 @@ export async function handleAIMessage(sessionId, userMessage) {
                 .replace(/through WhatsApp/gi, '')
                 .replace(/WhatsApp link/gi, '')
                 .replace(/sent? (to|via) your \w+/gi, '')
-                .replace(/\s+/g, ' ')
+                .replace(/[ \t]{2,}/g, ' ')
+                .replace(/\n{3,}/g, '\n\n')
                 .trim();
             
             // Log post-replacement message
@@ -160,13 +161,16 @@ export async function handleAIMessage(sessionId, userMessage) {
                     logger.info({ sessionId, leadId, triagePath, inviteGenerated: !!inviteLink }, 'App referral lead created');
                     
                     // Notify reception for app referral (so they can follow up)
-                    await notifyTherapist({
+                    notifyTherapist({
                         sessionId,
                         leadId,
                         priority: 'APP_REFERRAL',
                         brief: leadBrief
+                    }).then(() => {
+                        logger.info({ sessionId, leadId }, 'App referral reception notified');
+                    }).catch(err => {
+                        logger.error({ error: err.message, sessionId, leadId }, 'App referral notification failed (non-blocking)');
                     });
-                    logger.info({ sessionId, leadId }, 'App referral reception notified');
                 } catch (err) {
                     logger.warn({ error: err.message, sessionId }, 'Failed to create app referral lead or notify');
                 }
@@ -179,13 +183,17 @@ export async function handleAIMessage(sessionId, userMessage) {
                 const clinicalBrief = buildClinicalBrief(collectedData);
                 try {
                     const leadId = await createLead(sessionId, clinicalBrief);
-                    await notifyTherapist({
+                    notifyTherapist({
                         sessionId,
                         leadId,
                         priority: collectedData.urgency === 'crisis' ? 'CRISIS' : 'HIGH',
                         brief: clinicalBrief
+                    }).then(() => {
+                        logger.info({ sessionId, leadId }, 'Clinical therapist notified');
+                    }).catch(err => {
+                        logger.error({ error: err.message, sessionId, leadId }, 'Clinical notification failed (non-blocking)');
                     });
-                    logger.info({ sessionId, leadId }, 'Clinical lead created and therapist notified');
+                    logger.info({ sessionId, leadId }, 'Clinical lead created');
                     metadata.lead_created = true;
                     metadata.lead_id = leadId;
                 } catch (err) {
@@ -204,7 +212,7 @@ export async function handleAIMessage(sessionId, userMessage) {
                 : null;
             const safetyInviteRegex2 = /\[[\w_\s]*INVITE[^\]]*\]/gi;
             if (safetyInviteUrl) {
-                responseMessage = responseMessage.replace(safetyInviteRegex2, safetyInviteUrl);
+                responseMessage = responseMessage.replace(safetyInviteRegex2, `\n\n${safetyInviteUrl}\n\n`);
             } else {
                 responseMessage = responseMessage.replace(
                     safetyInviteRegex2,

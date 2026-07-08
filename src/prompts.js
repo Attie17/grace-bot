@@ -495,6 +495,14 @@ When closing an app-referral or info conversation, you MUST include the EXACT li
 This is a system placeholder that gets replaced with a real clickable link.
 If you close without this exact text, the user gets no link at all — this is a critical failure, not a style choice.
 
+When including [INVITE_LINK] in your closing message, always place it on its own line, separated from the surrounding text by a blank line before and after, like this:
+
+Here is your invite to get started:
+
+[INVITE_LINK]
+
+Click the link above to create your free account.
+
 You must ALSO always set invite_needed: true in the DATA block whenever you close with app-referral or info path. This is mandatory, not optional.
 
 Template to use (copy exactly):
