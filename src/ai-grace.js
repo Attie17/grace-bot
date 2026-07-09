@@ -85,7 +85,8 @@ export async function handleAIMessage(sessionId, userMessage) {
 
         // ── AUDIT-C SUBFLOW INITIATION ──
         // Trigger when: alcohol is primary substance, caller is self or caring
-        // (not professional), AUDIT-C has not yet been asked, and subflow is not pending.
+        // (not professional). Fire as soon as these are established — no need
+        // to wait for name or clinical triage_path, which come later in intake.
         // NOTE: caller_type is LLM-inferred (upstream inference risk, accepted — see docs).
         const alcoholPrimary = collectedData.struggle &&
             /(alcohol|drink|wine|beer|whisky|spirits|brandy)/i.test(collectedData.struggle);
@@ -93,11 +94,9 @@ export async function handleAIMessage(sessionId, userMessage) {
             collectedData.caller_type === 'caring';
         const auditCNotYetAsked = collectedData.audit_c_q1 === null &&
             collectedData.audit_c_pending === null;
-        const hasName = !!collectedData.name;
 
-        // Initiate after we know the struggle and name (enough context established)
-        if (alcoholPrimary && isEligibleCaller && auditCNotYetAsked && hasName &&
-            (triagePath === 'clinical' || collectedData.triage_path === 'clinical')) {
+        // Initiate as soon as struggle (alcohol) and caller_type are both known
+        if (alcoholPrimary && isEligibleCaller && auditCNotYetAsked) {
             collectedData.audit_c_pending = 'q1';
             const intro = `Before I pass your details across, I have three quick questions about your drinking — they help our team understand your situation better. There are no right or wrong answers.\n\nHow often do you have a drink containing alcohol?\n1 — Never\n2 — Monthly or less\n3 — 2–4 times per month\n4 — 2–3 times per week\n5 — 4 or more times per week\n\nPlease reply with the number (1–5).`;
             messages.push({ role: 'assistant', content: intro });
