@@ -19,6 +19,8 @@ import { notifyTherapist } from './handoff.js';
 import { logger } from './logger.js';
 import { AI_GRACE_SYSTEM_PROMPT } from './prompts.js';
 
+const LEAD_CREATE_RETRY_DELAY_MS = 750;
+
 /**
  * Main handler for AI mode messages.
  * Called from /api/stage when GRACE_MODE=ai.
@@ -56,7 +58,62 @@ export async function handleAIMessage(sessionId, userMessage) {
         const conversationComplete = extractedData.conversation_complete || false;
         const inviteNeeded = extractedData.invite_needed || false;
         const triagePath = extractedData.triage_path || collectedData.triage_path;
-        
+
+        // ── AUDIT-C SUBFLOW TRIGGER ──
+        // If the deterministic subflow is currently active, route to it instead of
+        // returning Claude's response. The subflow handles parsing and scoring.
+        if (collectedData.audit_c_pending) {
+            const auditResult = handleAuditCSubflow(userMessage, collectedData);
+            if (auditResult.stillPending) {
+                // Subflow needs another response (retry or next question)
+                messages.push({ role: 'assistant', content: auditResult.reply });
+                metadata.collectedData = collectedData;
+                metadata.phase = phase;
+                metadata.triage_path = triagePath;
+                await saveConversation(sessionId, messages, metadata);
+                return {
+                    reply: auditResult.reply,
+                    ack: [],
+                    next: { messages: [], inputType: 'text', stageId: 'ai_mode', ended: false },
+                    ended: false
+                };
+            }
+            // Subflow complete (scored, declined, or skipped) — fall through
+            // to normal AI response handling. Claude will ask the next question
+            // in the intake flow using the updated collectedData.
+        }
+
+        // ── AUDIT-C SUBFLOW INITIATION ──
+        // Trigger when: alcohol is primary substance, caller is self or caring
+        // (not professional), AUDIT-C has not yet been asked, and subflow is not pending.
+        // NOTE: caller_type is LLM-inferred (upstream inference risk, accepted — see docs).
+        const alcoholPrimary = collectedData.struggle &&
+            /(alcohol|drink|wine|beer|whisky|spirits|brandy)/i.test(collectedData.struggle);
+        const isEligibleCaller = collectedData.caller_type === 'self' ||
+            collectedData.caller_type === 'caring';
+        const auditCNotYetAsked = collectedData.audit_c_q1 === null &&
+            collectedData.audit_c_pending === null;
+        const hasName = !!collectedData.name;
+
+        // Initiate after we know the struggle and name (enough context established)
+        if (alcoholPrimary && isEligibleCaller && auditCNotYetAsked && hasName &&
+            (triagePath === 'clinical' || collectedData.triage_path === 'clinical')) {
+            collectedData.audit_c_pending = 'q1';
+            const intro = `Before I pass your details across, I have three quick questions about your drinking — they help our team understand your situation better. There are no right or wrong answers.\n\nHow often do you have a drink containing alcohol?\n1 — Never\n2 — Monthly or less\n3 — 2–4 times per month\n4 — 2–3 times per week\n5 — 4 or more times per week\n\nPlease reply with the number (1–5).`;
+            messages.push({ role: 'assistant', content: intro });
+            metadata.collectedData = collectedData;
+            metadata.phase = phase;
+            metadata.triage_path = triagePath;
+            await saveConversation(sessionId, messages, metadata);
+            return {
+                reply: intro,
+                ack: [],
+                next: { messages: [], inputType: 'text', stageId: 'ai_mode', ended: false },
+                ended: false
+            };
+        }
+        // ── END AUDIT-C LOGIC ──
+
         // Add assistant message to history
         messages.push({
             role: 'assistant',
@@ -157,7 +214,7 @@ export async function handleAIMessage(sessionId, userMessage) {
                 };
                 
                 try {
-                    const leadId = await createLead(sessionId, leadBrief);
+                    const leadId = await createLeadWithRetry(sessionId, leadBrief);
                     logger.info({ sessionId, leadId, triagePath, inviteGenerated: !!inviteLink }, 'App referral lead created');
                     
                     // Notify reception for app referral (so they can follow up)
@@ -172,7 +229,16 @@ export async function handleAIMessage(sessionId, userMessage) {
                         logger.error({ error: err.message, sessionId, leadId }, 'App referral notification failed (non-blocking)');
                     });
                 } catch (err) {
-                    logger.warn({ error: err.message, sessionId }, 'Failed to create app referral lead or notify');
+                    logger.warn({ error: err.message, sessionId }, 'Failed to create app referral lead');
+                    await handleLeadCreationFailure({
+                        sessionId,
+                        messages,
+                        metadata,
+                        brief: leadBrief,
+                        error: err,
+                        path: triagePath,
+                        priority: 'APP_REFERRAL'
+                    });
                 }
             }
         }
@@ -182,7 +248,7 @@ export async function handleAIMessage(sessionId, userMessage) {
             if (collectedData.name && collectedData.phone) {
                 const clinicalBrief = buildClinicalBrief(collectedData);
                 try {
-                    const leadId = await createLead(sessionId, clinicalBrief);
+                    const leadId = await createLeadWithRetry(sessionId, clinicalBrief);
                     notifyTherapist({
                         sessionId,
                         leadId,
@@ -198,6 +264,15 @@ export async function handleAIMessage(sessionId, userMessage) {
                     metadata.lead_id = leadId;
                 } catch (err) {
                     logger.error({ error: err.message, sessionId }, 'Clinical lead creation failed');
+                    await handleLeadCreationFailure({
+                        sessionId,
+                        messages,
+                        metadata,
+                        brief: clinicalBrief,
+                        error: err,
+                        path: triagePath,
+                        priority: collectedData.urgency === 'crisis' ? 'CRISIS' : 'HIGH'
+                    });
                 }
             }
         }
@@ -258,6 +333,62 @@ export async function handleAIMessage(sessionId, userMessage) {
     }
 }
 
+async function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function createLeadWithRetry(sessionId, brief) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+            return await createLead(sessionId, brief);
+        } catch (err) {
+            lastError = err;
+            logger.warn({ error: err.message, sessionId, attempt }, 'Lead creation attempt failed');
+            if (attempt < 2) {
+                await wait(LEAD_CREATE_RETRY_DELAY_MS);
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+async function handleLeadCreationFailure({ sessionId, messages, metadata, brief, error, path, priority }) {
+    const failedAt = new Date().toISOString();
+    const errorMessage = error?.message || 'Unknown lead creation error';
+
+    metadata.lead_created = false;
+    metadata.lead_creation_failed = true;
+    metadata.lead_creation_error = errorMessage;
+    metadata.lead_creation_failed_at = failedAt;
+    metadata.lead_creation_path = path;
+
+    await saveConversation(sessionId, messages, metadata);
+
+    const manualBrief = {
+        ...brief,
+        notes_for_therapist: [
+            `MANUAL LEAD REQUIRED: Grace collected a completed ${path} conversation, but automatic lead insert failed at ${failedAt}.`,
+            `Session: ${sessionId}`,
+            `Insert error: ${errorMessage}`,
+            brief.notes_for_therapist || ''
+        ].filter(Boolean).join('\n\n')
+    };
+
+    notifyTherapist({
+        sessionId,
+        leadId: null,
+        priority,
+        brief: manualBrief
+    }).then(() => {
+        logger.info({ sessionId, path }, 'Manual lead failure handoff sent');
+    }).catch(err => {
+        logger.error({ error: err.message, sessionId, path }, 'Manual lead failure handoff failed');
+    });
+}
+
 /**
  * Call Claude API with conversation history.
  * Returns full response text including DATA: extraction instruction.
@@ -278,7 +409,8 @@ Rules for the DATA block:
 - triage_path: "clinical" (needs treatment now), "app_referral" (support/explore), or "info" (general info).
 - invite_needed: set to true the moment you are closing an app_referral or info conversation and have name + phone.
 - conversation_complete: true only when you have sent the goodbye message.
-- For caring callers: name = caller's name (not the referred person's name), phone = caller's phone number.`;
+- For caring callers: name = caller's name (not the referred person's name), phone = caller's phone number.
+- DO NOT extract or infer audit_c_score or audit_c_tier — these are calculated by a separate validated subflow, never from narrative context.`;
 
     try {
         const response = await client.messages.create({
@@ -319,6 +451,107 @@ function parseClaudeResponse(response) {
     };
 }
 
+// ── AUDIT-C SUBFLOW ──────────────────────────────────────────────────────────
+//
+// Deterministic 3-question screening. Called when collectedData.audit_c_pending
+// is set. Parses the numeric response, advances to next question, or scores.
+//
+// Returns: { stillPending: bool, reply: string }
+//   stillPending = true  → return reply to caller immediately (next Q or retry)
+//   stillPending = false → subflow complete, fall through to normal AI turn
+//
+// KNOWN LIMITATION: The trigger (caller_type) is LLM-inferred; the scoring is
+// deterministic. A wrong trigger = wrong Q asked (bad experience), not a wrong
+// score (clinical error). Accepted trade-off — see docs.
+//
+function handleAuditCSubflow(userMessage, collectedData) {
+    const QUESTIONS = {
+        q1: {
+            text: 'How often do you have a drink containing alcohol?\n1 — Never\n2 — Monthly or less\n3 — 2–4 times per month\n4 — 2–3 times per week\n5 — 4 or more times per week\n\nPlease reply with the number (1–5).',
+            retryKey: 'retry_q1',
+            nextPending: 'q2',
+            field: 'audit_c_q1'
+        },
+        q2: {
+            text: 'How many standard drinks do you have on a typical day when you are drinking?\n1 — 1 or 2\n2 — 3 or 4\n3 — 5 or 6\n4 — 7 to 9\n5 — 10 or more\n\nPlease reply with the number (1–5).',
+            retryKey: 'retry_q2',
+            nextPending: 'q3',
+            field: 'audit_c_q2'
+        },
+        q3: {
+            text: 'How often do you have 6 or more drinks on one occasion?\n1 — Never\n2 — Less than monthly\n3 — Monthly\n4 — Weekly\n5 — Daily or almost daily\n\nPlease reply with the number (1–5).',
+            retryKey: 'retry_q3',
+            nextPending: null,
+            field: 'audit_c_q3'
+        }
+    };
+
+    const pending = collectedData.audit_c_pending;
+    const isRetry = pending?.startsWith('retry_');
+    const qKey = isRetry ? pending.replace('retry_', '') : pending;
+    const question = QUESTIONS[qKey];
+
+    if (!question) {
+        // Unknown pending state — clear and fall through
+        collectedData.audit_c_pending = null;
+        return { stillPending: false, reply: null };
+    }
+
+    // Parse the user's answer — accept just the digit, possibly with surrounding text
+    const match = userMessage.trim().match(/\b([1-5])\b/);
+    const answer = match ? parseInt(match[1]) : null;
+
+    if (answer === null) {
+        if (isRetry) {
+            // Second bad answer — skip this question gracefully, no score assigned
+            collectedData[question.field] = null;
+            collectedData.audit_c_pending = question.nextPending;
+            if (!question.nextPending) {
+                // Was on q3, can't score without it — clear all
+                collectedData.audit_c_score = null;
+                collectedData.audit_c_tier = null;
+                collectedData.audit_c_pending = null;
+                return { stillPending: false, reply: null };
+            }
+            const nextQ = QUESTIONS[question.nextPending];
+            return { stillPending: true, reply: `No problem — let\'s move on.\n\n${nextQ.text}` };
+        }
+        // First bad answer — offer one retry
+        collectedData.audit_c_pending = question.retryKey;
+        return {
+            stillPending: true,
+            reply: `I just need a number between 1 and 5 for that one. No pressure — take your time.\n\n${question.text}`
+        };
+    }
+
+    // Valid answer — store it
+    collectedData[question.field] = answer;
+
+    if (question.nextPending) {
+        // Move to next question
+        collectedData.audit_c_pending = question.nextPending;
+        return { stillPending: true, reply: QUESTIONS[question.nextPending].text };
+    }
+
+    // All three answered — score
+    const q1 = collectedData.audit_c_q1;
+    const q2 = collectedData.audit_c_q2;
+    const q3 = collectedData.audit_c_q3;
+
+    if (q1 !== null && q2 !== null && q3 !== null) {
+        const score = (q1 - 1) + (q2 - 1) + (q3 - 1);
+        collectedData.audit_c_score = score;
+        collectedData.audit_c_tier = score <= 2 ? 'universal'
+            : score <= 5 ? 'selective'
+            : 'indicated';
+    }
+    // If any Q was skipped (null), leave score/tier null — partial data, no score assigned
+
+    collectedData.audit_c_pending = null;
+    return { stillPending: false, reply: null };
+}
+// ── END AUDIT-C SUBFLOW ───────────────────────────────────────────────────────
+
 /**
  * Initialize empty collected data structure.
  */
@@ -334,8 +567,13 @@ function initializeCollectedData() {
         involves_minor: false,
         guardian_name: null,
         guardian_phone: null,
+        // AUDIT-C: set by deterministic subflow, never inferred by Claude
+        audit_c_q1: null,
+        audit_c_q2: null,
+        audit_c_q3: null,
         audit_c_score: null,
         audit_c_tier: null,
+        audit_c_pending: null,   // 'q1' | 'q2' | 'q3' | 'retry_q1' | 'retry_q2' | 'retry_q3' | null
         health_notes: null,
         triage_path: null
     };
@@ -409,7 +647,7 @@ function buildClinicalBrief(collectedData) {
         caller_type: collectedData.caller_type || 'self',
         for_whom: collectedData.caller_type === 'caring' ? 'family' : 'self',
         urgency: collectedData.urgency || 'soon',
-        urgency_level: collectedData.crisis ? 'crisis' : 'high',
+        urgency_level: collectedData.crisis ? 'crisis' : 'urgent',
         medical_aid: collectedData.medical_aid,
         notes_for_therapist: collectedData.health_notes,
         involves_minor: collectedData.involves_minor,
