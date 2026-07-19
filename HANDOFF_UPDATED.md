@@ -36,16 +36,14 @@ No logic was changed in this conversion, with one narrow exception (see
   `{ value: "substance", confidence: 0.8, source: "primary_substance" }`
   for a conversation mentioning alcohol.
 
-**Weaker evidence (reported inline by Copilot during a live debugging
-session, not captured as a clean final terminal paste):**
-- `extractGuardianDetailsWithAI()` — reportedly returned real Haiku output:
-  `guardian_name: "Linda"`, `guardian_phone: "0821234567"`,
+**Strong evidence (raw output seen directly — UPDATED, previously weaker):**
+- `extractGuardianDetailsWithAI()` — clean, isolated re-run confirmed real
+  Haiku output: `guardian_name: "Linda"`, `guardian_phone: "0821234567"`,
   `guardian_relation: "mother"`, confidence 0.95,
-  `guardian_extraction_status: "captured"`. This is plausible and consistent
-  with a working real API call, but was not independently re-verified with a
-  clean, isolated raw paste. **Treat as likely-correct, not fully confirmed.**
-  A clean re-run with the debug logging already removed would close this gap
-  if it matters before the next feature work is attempted.
+  `guardian_extraction_status: "captured"`, `source: "ai_extraction"` (not
+  a mock artifact — `ai_extraction_failed` would appear if the mock or a
+  parsing failure were involved). This gap from the original write-up is
+  now closed.
 
 **Not tested at all:**
 - The full `conductIntake()` flow through `server.js`'s actual routes (only
@@ -93,18 +91,27 @@ approved. Diffed against the original conversion to confirm it was the
   sidesteps this issue entirely. **Worth a five-minute check before assuming
   it's fine in production** — it may only be a local-dev gap.
 
-## NEW BUG FOUND, NOT YET FIXED
+## BUG FOUND, CONFIRMED REPRODUCIBLE, NOT YET FIXED
 
-`extractName()` in `fieldExtractor.js` incorrectly extracted the word
-"worried" as a caller's name during an earlier mocked test run, likely
-because a message like "I'm worried about..." matched the
+`extractName()` in `fieldExtractor.js` incorrectly extracts the word
+"worried" as a caller's name. **Confirmed reproducible across two separate
+runs** (one mocked, one with the real Haiku API for guardian extraction —
+same result both times, ruling out a one-off fluke):
+```
+"name": { "value": "worried", "confidence": 0.95, "source": "explicit_introduction" }
+```
+Root cause: a message like "I'm worried about..." matches the
 `/(?:my\s+name\s+is|I'm|I am|...)\s+([A-Z][a-zA-Z]+)/i` pattern — "worried"
 was capitalized at the start of a sentence and satisfied `[A-Z][a-zA-Z]+`.
 
-Not investigated further. Not fixed. Flagging so it isn't lost. Likely fix
-direction: exclude common non-name words immediately following "I'm" (a
-stopword list), or require the matched word to not be a common English verb/
-adjective — needs its own dedicated pass, not a quick patch.
+Not yet fixed. Likely fix direction: exclude common non-name words
+immediately following "I'm" (a stopword list), or require the matched word
+to not be a common English verb/adjective — needs its own dedicated pass,
+not a quick patch. This is a real accuracy bug that would corrupt live
+caller data (a caller genuinely named "Worried" is implausible but a lead
+record with the wrong name field populated is a real clinical-data-quality
+issue), so it should be prioritized reasonably soon, not indefinitely
+deferred.
 
 ## STILL OUTSTANDING (CARRIED FORWARD, UNCHANGED)
 
@@ -138,11 +145,11 @@ disregarded.** Production-readiness would require, at minimum:
 
 ## IMMEDIATE NEXT STEPS, IN ORDER
 
-1. (Optional, low effort) Re-run the guardian extraction test cleanly, with
-   debug logging already removed, and paste raw output — closes the one
-   "weaker evidence" gap above.
-2. Fix the `extractName()` "worried" bug, or explicitly deprioritize it with
-   a reason.
+1. ~~Re-run the guardian extraction test cleanly~~ — **DONE.** Confirmed
+   with clean raw output, `source: "ai_extraction"`, all three guardian
+   fields populated correctly.
+2. Fix the `extractName()` "worried" bug — now confirmed reproducible
+   across two runs, not a one-off. Should be prioritized reasonably soon.
 3. Confirm whether Railway's deployment env vars already resolve the
    `.env` vs `.env.local` gap, or whether this needs explicit handling before
    deploy.
