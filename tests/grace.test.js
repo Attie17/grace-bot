@@ -72,6 +72,14 @@ describe("Grace Conversation Engine", () => {
       expect(extracted.name?.value).toBe("James");
     });
 
+    it("should NOT extract common words as names (false positive fix)", async () => {
+      const messages = [
+        { role: "user", content: "I'm worried about my drinking" },
+      ];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.name?.value).toBeNull();
+    });
+
     it("should extract phone number", async () => {
       const messages = [
         { role: "user", content: "Call me at 0821234567" },
