@@ -113,7 +113,126 @@ record with the wrong name field populated is a real clinical-data-quality
 issue), so it should be prioritized reasonably soon, not indefinitely
 deferred.
 
-## STILL OUTSTANDING (CARRIED FORWARD, UNCHANGED)
+## ARCHITECTURE DECISION: conversationEngine.js WILL REPLACE ai-grace.js
+
+**Confirmed by the project owner, deliberately, after investigation. This is
+now settled — do not re-litigate from scratch next session.**
+
+### What was discovered tonight
+
+`server.js` currently routes production traffic (when `GRACE_MODE=ai`, which
+IS the current live setting) to `ai-grace.js`'s `handleAIMessage()` — not to
+`conversationEngine.js`, which has never been wired in
+(`server.js` never references it, confirmed by direct read).
+
+`ai-grace.js` and `stages.js` are NOT abandoned/legacy code. `stages.js` has
+25 real commits of iterative clinical development (guardian capture for
+minors, AUDIT-C, DSD funding logic, mental health flow, professional/CBO
+referral flow, crisis urgency mapping). `ai-grace.js`'s most recent commit
+(`b44b459`) builds on top of that. This is mature, tested, live
+functionality — not dead weight.
+
+A live field-check (checking the actual deployed bot) confirmed
+`ai-grace.js` is still asking numbered 1-5 AUDIT-C questions in production,
+which is NOT the desired behavior going forward.
+
+### Two decisions that resolve the apparent conflict
+
+1. **AUDIT-C moves out of Grace entirely.** Instead of trying to derive
+   AUDIT-C-equivalent scores from natural conversation (which was proving
+   fragile and was never actually implemented in either file — confirmed by
+   empty grep results), AUDIT-C becomes the first questionnaire a user
+   completes upon accepting the Sobriety Journey app invite. This is
+   arguably clinically better (a real structured form beats an LLM
+   paraphrasing a validated screening tool) and removes the single biggest
+   piece of functional overlap between `ai-grace.js` and
+   `conversationEngine.js`.
+   - Minor open question, not urgent: DSD Objective 1 reporting wants
+     helpline-level substance breakdown — if that specifically requires
+     data from callers who never accept the SJ invite, there may be a
+     reporting gap. Not investigated further tonight.
+
+2. **`conversationEngine.js` IS the intended replacement for
+   `ai-grace.js`'s conversational role**, confirmed directly by the project
+   owner. `grace.system.js` (conversationEngine.js's system prompt) was
+   independently reviewed and is consistent with this — MI-driven natural
+   conversation, explicit "DO NOT ask: 'On a scale of 1-10...'" instruction,
+   trauma-informed structure.
+
+### Full gap analysis — what must be ported/fixed before wiring is safe
+
+| Capability | Live (`ai-grace.js` + `database.js` + `handoff.js`) | `conversationEngine.js` | Status |
+|---|---|---|---|
+| Conversation storage | `conversations` table via `database.js` | `grace_conversations` table, dedicated schema with `extracted_fields`, `sentiment_trajectory`, `escalation_flag` as real queryable columns (not buried in JSONB) | ✅ **Resolved earlier tonight** — migration run, table verified to exist with all 12 columns, three call sites in `conversationEngine.js` confirmed correctly targeting it, real test conversation confirmed persisting end-to-end. **Not yet reachable from production** since the engine itself isn't wired in yet, but the storage layer is sound and deliberately designed (escalation/sentiment as real columns, not JSONB, for auditability). |
+| Lead creation | `createLead()` in `database.js` — full ~35-field schema | Never called anywhere in `conversationEngine.js`. `wrapUpConversation()` returns `nextAction: "CREATE_LEAD"` but nothing currently consumes that signal | 🔴 Still missing — needs wiring |
+| Therapist/reception notification | `notifyTherapist()` in `handoff.js` — WhatsApp (crisis + reception), email (reception + CEO), triggers SJ webhook | Never called | 🔴 Still missing — needs wiring |
+| Field-shape match to `createLead()` | N/A, already matches its own schema | `fieldExtractor.js` uses different names/shapes than `createLead()` expects: `primary_substance` vs `substance_primary`, `city_town` vs `city`; and doesn't produce `for_whom`, `caller_relation`, `referred_name`, `usage_pattern`, `mental_health`, `medical_flags`, `readiness_score`, `recommended_programme`, `caller_age_band`, `funding_source`, or any UTM fields at all | 🔴 Needs a mapping/adapter layer between `fieldExtractor.js`'s output and `createLead()`'s expected input |
+| Guardian fields | `createLead()` expects `guardian_name`/`guardian_phone`/`guardian_relation` | `extractGuardianDetailsWithAI()` produces exactly these names | 🟢 Already compatible, verified tonight with real Haiku API |
+| Crisis handling | `detectCrisis`/`getResponseWithCrisisDetection` in `claude-client.js` → `notifyTherapist(CRISIS)` + `sendCrisisEmail()` | `detectEscalation()` exists and returns canned crisis-response text to the caller, but never calls `notifyTherapist()` or any real alerting | 🔴 Detection logic exists; the actual alerting pipeline is missing |
+| SJ invite generation | **Two separate implementations exist**, not yet reconciled: `ai-grace.js`'s `generateInviteToken()` (uses `SJ_APP_URL` / `GRACE_WEBHOOK_SECRET`, calls `/api/invite/grace`) and `handoff.js`'s `notifySobrietyJourney()` (uses `SJ_WEBHOOK_URL` / `SJ_WEBHOOK_SECRET`, different payload shape) | Neither exists in `conversationEngine.js` | 🟡 Needs clarification on which is canonical (or whether both are needed for different paths) before porting |
+| AUDIT-C in schema/email templates | `createLead()` and `handoff.js`'s HTML email template both still reference `audit_c_score`/`audit_c_tier` | N/A — dropped from Grace's scope per tonight's decision | 🟢 No action needed. Nulls will render as "not completed," which now correctly describes every Grace-originated intake going forward |
+| 🟡 bucket fields (carried forward from original handoff) | `createLead()` confirms these are real, expected, non-optional-in-spirit fields: `medical_aid_name`, `funding_source`, `medical_member_number` | Not extracted at all | 🔴 Confirms the original handoff's flagged gap, now with certainty against the real schema |
+
+### Prior confirmation — this was not a one-off late-night call
+
+This decision was made and consistently restated across multiple sessions,
+not decided once under tonight's momentum:
+
+- **July 19, ~15:38 (earlier the same day, different chat)** — the project
+  owner directly instructed a prior chat: *"conversationEngine.js replaces
+  stages.js entirely"* and had it confirm `conversationEngine.js` was
+  orphaned from `server.js` at that time too.
+- **July 10 (an earlier session)** — established via direct code
+  comparison that `stages.js` has AUDIT-C fully scripted (3 numbered
+  questions, real scoring), while `ai-grace.js` does not ask it directly
+  and instead relies on inference — useful context for why the numbered
+  AUDIT-C questions seen on the live deployed bot most likely trace to a
+  `stages.js` code path, separate from `ai-grace.js`'s own (also numbered)
+  `handleAuditCSubflow()`.
+- **A chat titled "Researching GraceBot and StabilisBot capabilities"**
+  (same day as tonight, earlier) — independently investigated the same
+  `ai-grace.js` vs `conversationEngine.js` question from a different
+  angle and reached consistent conclusions, including the
+  database-table-confusion fix documented above.
+- **Tonight** — this chat independently re-derived the same tension from
+  scratch (having started fresh, without that context loaded) and the
+  project owner re-confirmed the same decision directly.
+
+The apparent contradictions that surfaced during tonight's session (e.g.
+one thread's claim that "stages.js is confirmed retired" without
+supporting evidence) came from secondhand, summarized claims losing
+precision in the retelling between sessions — not from the underlying
+decisions actually being inconsistent. When traced back to primary
+sources (direct owner instructions, actual git log, actual file reads),
+everything lines up.
+
+
+
+1. Build the field-mapping adapter between `fieldExtractor.js` output and
+   `createLead()`'s expected shape.
+2. Wire `conversationEngine.js`'s `wrapUpConversation()` to actually call
+   `createLead()` and `notifyTherapist()` on `CREATE_LEAD`.
+3. Resolve the two competing SJ-invite implementations — pick one, port it
+   in, remove or clearly deprecate the other.
+4. Add a new mode flag (e.g. `GRACE_MODE=ai_v2`) so `conversationEngine.js`
+   can be tested side-by-side with the current live `ai-grace.js` path,
+   without touching the default until proven.
+5. Test end-to-end on the new mode flag — a full conversation through the
+   actual `server.js` route, not just a standalone script — before ever
+   considering flipping the default `GRACE_MODE` value in production.
+6. Only after 5 succeeds repeatedly: flip the default, monitor closely,
+   keep `ai-grace.js` available as an instant rollback path for a defined
+   period before considering removing it.
+
+### Process note for next session
+
+Two Claude chat sessions were both working on this repo in parallel earlier
+tonight, occasionally reaching conflicting conclusions (e.g. one asserted
+"stages.js is confirmed retired" without evidence, which the actual git log
+directly contradicted). Recommend consolidating to a single chat thread for
+architecture-level decisions on this repo going forward — parallel sessions
+without a single source of truth risk exactly this kind of drift.
+
 
 - 🟡 bucket fields (`medical_aid_name`, `medical_member_number`,
   `funding_source`, `referred_name`, `caller_relation`) never checked
@@ -157,18 +276,56 @@ disregarded.** Production-readiness would require, at minimum:
    (original STEP 5 from the prior handoff) — not started yet.
 5. Only after 4: Phase 1A webhook relocation into `wrapUpConversation()`.
 
-## WORKING METHOD — UNCHANGED, STILL APPLIES
+## WORKING METHOD — FULL LIST, SELF-CONTAINED
 
-All 10 rules from the prior handoff still apply, including rule 10 (no new
-functionality on a module with an unresolved structural blocker — the ESM
-blocker is now resolved, so this restriction is lifted for
-`conversationEngine.js` / `fieldExtractor.js` specifically, but the general
-principle — fix and verify before adding — still governs all future work).
+These rules governed tonight's session and should continue to. Listed in
+full here (not just referenced) so this document is self-contained even
+if the next session doesn't have access to earlier handoff docs.
 
-New observation to carry forward: raw terminal output pasted cleanly by the
-user is significantly more reliable evidence than Copilot's own inline
-narrative summary of what it did. Where possible, prefer asking for the
-former.
+1. **One step at a time.** Don't bundle multiple changes or checks into a
+   single request — confirm each step before moving to the next.
+2. **Raw output only, pasted in-message — not summarized, not attached as
+   a document.** A description of what a terminal command showed is not
+   the same as the actual output. Ask for the real thing every time.
+3. **No "done" without evidence.** A claim that something works needs a
+   passing test, real output, or a direct check — not just an assertion
+   (from Claude, from Copilot, or from anyone) that it works.
+4. **Confirm understanding before making code changes.** State the plan,
+   get explicit agreement, then act — don't act first and explain after.
+5. **Resolve conflicts before proceeding.** If two pieces of evidence (or
+   two sessions, or two files) disagree, stop and reconcile the
+   disagreement with primary evidence before building on either claim.
+6. **One file at a time.** Don't touch multiple files in a single change
+   when they can be handled sequentially — makes each change easier to
+   verify and easier to revert if wrong.
+7. **See full shapes before modifying.** Read a complete file (or at
+   least the complete relevant function/section) before editing it —
+   don't edit based on a partial view or a remembered summary.
+8. **Independently verify after changes.** After a fix is applied, check
+   it actually works — don't take "it should work now" as the end state.
+9. **Say "not confirmed" rather than guess.** When evidence is
+   incomplete or ambiguous, say so plainly instead of filling the gap
+   with a plausible-sounding assumption.
+10. **Do not add new functionality to a module with a known, unresolved
+    structural blocker.** Fix the blocker first, verify the fix works
+    end-to-end, then resume feature work. (The ESM blocker this rule
+    originally referred to is now resolved — but the general principle
+    stands for any future blocker.)
+
+**New observation to carry forward** (added during tonight's session):
+raw terminal output pasted cleanly by the user is significantly more
+reliable evidence than an AI assistant's own inline narrative summary of
+what it did. Where possible, prefer asking for the former over accepting
+the latter.
+
+**Second new observation** (added tonight, re: the multi-session
+architecture investigation): when a claim traces back to a different
+chat session rather than something directly verified in the current one,
+treat it as a report to be checked against primary evidence — not as
+settled fact — even when it sounds confident and specific. Prefer
+consolidating architecture-level decisions to a single chat thread over
+letting parallel/sequential sessions each reach and assert independent
+conclusions.
 
 ---
 *This document supersedes "UPDATED HANDOFF FOR NEW CHAT" from the same
