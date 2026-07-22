@@ -355,6 +355,106 @@ function calculateClinicalScores(extractedFields) {
   };
 }
 
+// ============================================================================
+// 10. BUILD PAYLOAD FOR SOBRIETY JOURNEY API
+// ============================================================================
+/**
+ * Build the exact payload shape required by POST /api/webhooks/grace/lead
+ * on the Sobriety Journey app. Performs all necessary translation and enum
+ * mapping between fieldExtractor's vocabulary and SJ's database schema.
+ *
+ * Confirmed directly against SJ Prisma schema and route handler code.
+ *
+ * @param {Object} extractedFields - fieldExtractor.js's raw extracted-fields output
+ *        Shape: {name: {value, confidence, source}, ...} from extractFieldsFromConversation()
+ * @param {string} graceLeadId - Grace's internal lead ID (will be stored as grace_lead_id in SJ)
+ * @returns {Object} Complete lead payload matching SJ's POST /api/webhooks/grace/lead schema
+ */
+function buildGraceLeadPayload(extractedFields, graceLeadId) {
+  const unwrap = (field) => (field && 'value' in field) ? field.value : null;
+
+  // --- Translation: fieldExtractor's who_for vocabulary → SJ's whoFor enum ---
+  // SJ expects: myself | someone_else | professional
+  const whoForRaw = unwrap(extractedFields.who_for);
+  const whoForMap = {
+    self: 'myself',
+    self_under_18: 'myself',
+    child: 'someone_else',
+    partner: 'someone_else',
+    family_or_friend: 'someone_else',
+    unknown: 'myself', // safest default per confirmed schema
+  };
+  const whoFor = whoForMap[whoForRaw] || 'myself';
+
+  // --- Translation: fieldExtractor's urgency_level → SJ's urgencyLevel enum ---
+  // SJ expects: crisis | urgent | normal (lowercase)
+  const urgencyRaw = unwrap(extractedFields.urgency_level);
+  const urgencyMap = {
+    CRISIS: 'crisis',
+    URGENT: 'urgent',
+    SOON: 'normal',
+    EXPLORING: 'normal',
+    UNKNOWN: 'normal',
+  };
+  const urgencyLevel = urgencyMap[urgencyRaw] || 'normal';
+
+  // --- Translation: fieldExtractor's caller_type → SJ's CallerType enum ---
+  // SJ expects: self | caring | professional (real Prisma enum — wrong value = hard error)
+  const callerTypeRaw = unwrap(extractedFields.caller_type);
+  const callerTypeMap = {
+    adult_self: 'self',
+    myself_under_18: 'self',
+    family_under_18: 'caring',
+    professional: 'professional',
+  };
+  const callerType = callerTypeMap[callerTypeRaw] || 'self';
+
+  // --- Derivation: callerAgeBand (SJ expects: adult | minor_self | minor_other) ---
+  const involvesMinor = unwrap(extractedFields.involves_minor) === true;
+  let callerAgeBand = 'adult';
+  if (whoForRaw === 'self_under_18' || callerTypeRaw === 'myself_under_18') {
+    callerAgeBand = 'minor_self';
+  } else if (involvesMinor) {
+    callerAgeBand = 'minor_other';
+  }
+
+  const substancePrimary = unwrap(extractedFields.primary_substance);
+
+  return {
+    grace_lead_id: graceLeadId,
+    contact_name: unwrap(extractedFields.name),
+    contact_phone: unwrap(extractedFields.phone),
+    contact_email: null, // not collected by conversational Grace
+    track: unwrap(extractedFields.track),
+    who_for: whoFor,
+    caller_relation: unwrap(extractedFields.caller_relation),
+    referred_name: unwrap(extractedFields.referred_name),
+    urgency_level: urgencyLevel,
+    involves_minor: involvesMinor,
+    caller_age_band: callerAgeBand,
+    guardian_name: unwrap(extractedFields.guardian_name),
+    guardian_phone: unwrap(extractedFields.guardian_phone),
+    funding_source: unwrap(extractedFields.funding_source), // vocab already matches, confirmed
+    medical_aid: null, // fieldExtractor has medical_aid_type, different concept — needs its own review
+    medical_aid_name: null, // not collected
+    city: unwrap(extractedFields.city_town),
+    substance_primary: substancePrimary,
+    previous_treatment: unwrap(extractedFields.previous_treatment),
+    health_notes: null, // confirmed gap — no free-text health notes collected by new system
+    mh_description: null, // same — no equivalent field exists
+    caller_type: callerType,
+    utm_source: null, // must come from server.js/widget URL params, not conversation
+    utm_medium: null,
+    utm_campaign: null,
+    audit_c_q1: null, // dropped from Grace's scope, confirmed decision
+    audit_c_q2: null,
+    audit_c_q3: null,
+    audit_c_score: null,
+    audit_c_tier: null,
+    struggle: substancePrimary, // confirmed alias of substance_primary in old system
+  };
+}
+
 export {
   HIGH_RISK_SUBSTANCES,
   mapReadinessToScore,
@@ -364,5 +464,6 @@ export {
   formatMedicalFlags,
   normalizeForWhom,
   adaptExtractedFieldsToBrief,
-  calculateClinicalScores
+  calculateClinicalScores,
+  buildGraceLeadPayload
 };
