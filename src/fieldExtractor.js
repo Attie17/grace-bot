@@ -41,6 +41,9 @@ async function extractFieldsFromConversation(messages, anthropicClient = null) {
     best_call_time: extractCallTime(fullText),
     involves_minor: involvesMinorResult,
     track: deriveTrack(extractSubstance(fullText)),
+    funding_source: extractFundingSource(fullText),
+    caller_relation: extractCallerRelation(fullText),
+    referred_name: extractReferredName(fullText),
   };
 
   if (involvesMinorResult.value === true) {
@@ -789,6 +792,175 @@ function deriveTrack(primarySubstanceResult) {
 }
 
 /**
+ * Extract funding source
+ * Vocabulary: dsd_subsidy | medical_aid | sassa | private | unknown
+ */
+function extractFundingSource(text) {
+  // DSD / government / state-funded
+  if (/\b(?:DSD|government|state[- ]funded|subsidy|subsidi[sz]ed)\b/i.test(text)) {
+    return {
+      value: "dsd_subsidy",
+      confidence: 0.95,
+      source: "explicit",
+    };
+  }
+
+  // Medical aid schemes
+  if (/\b(?:medical\s+aid|discovery|momentum|bonitas|medshield|medical\s+scheme|netcare|axa|zurich|smile)\b/i.test(text)) {
+    return {
+      value: "medical_aid",
+      confidence: 0.95,
+      source: "explicit",
+    };
+  }
+
+  // SASSA (South African Social Security Agency)
+  if (/\bsassa\b/i.test(text)) {
+    return {
+      value: "sassa",
+      confidence: 0.95,
+      source: "explicit",
+    };
+  }
+
+  // Private / self-pay
+  if (/\b(?:private|self[- ]?pay|paying\s+myself|no\s+medical\s+aid|cash)\b/i.test(text)) {
+    return {
+      value: "private",
+      confidence: 0.9,
+      source: "explicit",
+    };
+  }
+
+  return {
+    value: "unknown",
+    confidence: 0,
+    source: "not_found",
+  };
+}
+
+/**
+ * Extract caller relation to referred person
+ * Only meaningful when caller is talking about someone else.
+ * Vocabulary: child | partner | family | friend | other
+ * More granular than extractWhoFor() — distinguishes friend from general family.
+ */
+function extractCallerRelation(text) {
+  // Child (son/daughter/kid)
+  if (/\b(?:my\s+(?:son|daughter|child|kid))\b/i.test(text)) {
+    return {
+      value: "child",
+      confidence: 0.95,
+      source: "explicit",
+    };
+  }
+
+  // Partner (wife/husband/spouse/partner)
+  if (/\b(?:my\s+(?:wife|husband|partner|spouse))\b/i.test(text)) {
+    return {
+      value: "partner",
+      confidence: 0.95,
+      source: "explicit",
+    };
+  }
+
+  // Friend (specific friend keywords)
+  if (/\b(?:my\s+friend|best\s+friend|close\s+friend)\b/i.test(text)) {
+    return {
+      value: "friend",
+      confidence: 0.9,
+      source: "explicit",
+    };
+  }
+
+  // Family (sibling, parent, relative, family member — but not friend)
+  if (/\b(?:my\s+(?:brother|sister|mother|father|parent|aunt|uncle|cousin|niece|nephew|grandparent|sibling)|family\s+member)\b/i.test(text)) {
+    return {
+      value: "family",
+      confidence: 0.9,
+      source: "explicit",
+    };
+  }
+
+  // Generic "friend" without "my"
+  if (/\bfriend\b/i.test(text) && !/\b(?:myself|me|I|I'm|I am|self)\b/i.test(text)) {
+    return {
+      value: "friend",
+      confidence: 0.8,
+      source: "inferred",
+    };
+  }
+
+  // No relationship language found (caller talking about themselves)
+  if (/\b(?:myself|me|I'm|I am|my own|self|I)\b/i.test(text)) {
+    return {
+      value: null,
+      confidence: 0,
+      source: "not_found",
+    };
+  }
+
+  // Relationship words present but unclear
+  if (/\b(?:someone|person|people|they|them|referred|call(?:ing|ed)\s+about)\b/i.test(text)) {
+    return {
+      value: "other",
+      confidence: 0.5,
+      source: "inferred",
+    };
+  }
+
+  return {
+    value: null,
+    confidence: 0,
+    source: "not_found",
+  };
+}
+
+/**
+ * Extract referred person's name
+ * Only relevant when caller is calling about another person.
+ * Patterns: "my son/daughter/wife/etc.'s name is X", "he/she's called X", "calling about X"
+ */
+function extractReferredName(text) {
+  // Stopwords to prevent false positives like "calling about my drinking"
+  const REFERRED_NAME_STOPWORDS = new Set([
+    "my", "is", "not", "about", "calling", "the", "a", "an",
+    "and", "or", "but", "for", "with", "from", "to", "in", "at",
+    "by", "on", "up", "down", "out", "off", "over", "under",
+    "him", "her", "them", "he", "she", "it", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would",
+    "could", "should", "may", "might", "must", "can", "called",
+    "name", "person", "child", "client", "patient", "referred",
+  ]);
+
+  const patterns = [
+    /(?:my\s+(?:son|daughter|child|wife|husband|partner|brother|sister|friend)'?s?\s+name\s+is|(?:he|she|they)'?s?\s+called|calling\s+about)\s+([A-Z][a-zA-Z]+)/i,
+    /(?:the\s+(?:child|person|patient|client)(?:'s)?\s+name|referred\s+(?:patient|client)\s+name)\s+is\s+([A-Z][a-zA-Z]+)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const candidate = match[1];
+      if (REFERRED_NAME_STOPWORDS.has(candidate.toLowerCase())) {
+        continue; // not a name, try next pattern
+      }
+      return {
+        value: candidate,
+        confidence: 0.9,
+        source: "explicit_referral",
+      };
+    }
+  }
+
+  return {
+    value: null,
+    confidence: 0,
+    source: "not_found",
+  };
+}
+
+/**
  * Extract guardian details using AI
  */
 async function extractGuardianDetailsWithAI(messages, anthropicClient) {
@@ -866,4 +1038,9 @@ ${conversationText}`;
   }
 }
 
-export { extractFieldsFromConversation };
+export {
+  extractFieldsFromConversation,
+  extractFundingSource,
+  extractCallerRelation,
+  extractReferredName,
+};
