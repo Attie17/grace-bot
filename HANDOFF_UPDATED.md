@@ -438,28 +438,115 @@ was never explained or resolved, just worked around. Worth someone
 familiar with the SJ deployment history clarifying which is authoritative
 and, ideally, removing the stale one.
 
-## IMMEDIATE NEXT STEPS, IN ORDER (SUPERSEDES THE OLDER LIST ABOVE)
+## FINAL UPDATE — SESSION CONTINUED SIGNIFICANTLY FURTHER, MAJOR ITEMS NOW CLOSED
 
-1. Resolve the `clinicalScoring.js` destination question above — decide
-   where readiness/programme/review-flag data should actually go, if
-   anywhere, before considering that module fully integrated.
-2. Fix the `extractName()` "worried" bug — still open, still confirmed
-   reproducible, still not fixed. Genuinely overdue at this point.
-3. Add the `GRACE_MODE=ai_v2` feature flag to `server.js`, so the new
-   engine can be tested through the real HTTP route (not just standalone
-   scripts) safely alongside the still-live `ai-grace.js` default.
-4. Run one real, complete conversation through that new route end-to-end
-   — this is the one thing that still hasn't been tested: everything so
-   far has exercised `conversationEngine.js`'s methods directly, never
-   through `server.js`'s actual request/response cycle.
-5. Only after 3 and 4 are solid: discuss flipping `GRACE_MODE`'s default,
-   with a monitoring period and `ai-grace.js` kept available as an
-   instant rollback.
-6. Resolve the `.env`/`.env.local` Supabase project discrepancy noted
-   above — low urgency, but a real loose end.
-7. Clarify the `medical_aid_type` vs `medical_aid` field-name mismatch
-   flagged earlier in this doc (currently sent as `null` to SJ) — a
-   genuine minor gap, not yet addressed.
+Everything below supersedes the "IMMEDIATE NEXT STEPS" list above — most
+of those items are now genuinely done, not just planned. Kept the
+original list above for the historical record of what was still open at
+that point.
+
+### Item-by-item resolution of the old list
+
+1. ✅ **`clinicalScoring.js` destination — RESOLVED.** After confirming
+   no field existed in SJ's schema for this data (full schema search,
+   zero matches), 5 new fields were added to SJ's `GraceLead` model:
+   `readinessScore`, `recommendedProgramme`, `mentalHealthSuspected`,
+   `medicalFlags`, `reviewFlags`. Tested on a real dev database
+   (`sobriety-support-dev`) before being applied to production, both
+   independently verified via direct SQL query. The SJ webhook route
+   handler (`/api/webhooks/grace/lead`) updated to accept and store
+   them, verified with a clean full-project `tsc --noEmit`.
+   `buildGraceLeadPayload()` now calls `calculateClinicalScores()` and
+   includes all 5 fields in the outgoing payload — tested with real data
+   including the minor-in-crisis review-flag case, confirmed producing
+   the correct human-readable therapist note.
+2. ✅ **`extractName()` "worried" bug — ALREADY FIXED, EARLIER
+   MIS-TRACKED AS OPEN.** This was actually fixed and verified early in
+   tonight's session (commit `f054390`). It was incorrectly carried
+   forward as "still open" in later summaries without re-verification —
+   a real process mistake, caught and corrected mid-session. No actual
+   bug remains; this was a documentation error, not a code error.
+3. ✅ **Real HTTP route added — done differently, and arguably better,
+   than a feature flag.** Rather than `GRACE_MODE=ai_v2` inside the
+   existing `/api/stage` route, a completely separate route was built:
+   `POST /api/v2/message`. This is safer than a flag — it shares zero
+   code path with the live `ai-grace.js` default, so there is no risk to
+   real callers regardless of what happens while testing it further.
+4. ✅ **Real end-to-end conversation tested through the actual HTTP
+   route — DONE.** Not a standalone script; genuine `Invoke-RestMethod`
+   calls against a running `npm start` server. This surfaced **four real
+   bugs**, none of which were caught by any of tonight's earlier mocked
+   tests:
+   - Missing `caller_id` column on `grace_conversations` (schema gap —
+     fixed via migration)
+   - `sessionId` (an arbitrary string) misused as `conversationId` (a
+     UUID primary key) — fixed by separating the two concerns properly
+   - Missing `.select()` after Supabase `.insert()`, causing a crash
+     immediately after a successful save (an easy-to-miss Supabase
+     client quirk)
+   - `.insert()` used where `.upsert()` was needed once continuity
+     started working correctly, causing duplicate-key errors on the
+     second turn of any conversation
+   All four fixed, and a genuine two-turn conversation was confirmed
+   showing real continuity (no self-reintroduction, no repeated
+   boilerplate on turn 2) with completely clean server logs.
+5. **Flipping `GRACE_MODE`'s default — still not done, deliberately.**
+   This remains the one genuinely appropriate thing to defer to a fresh,
+   dedicated session — not because anything is unready, but because this
+   is the step that actually changes what real callers experience, and
+   deserves full attention rather than being the last thing done at the
+   end of a very long session.
+6. ✅ **`.env`/`.env.local` Supabase discrepancy — FULLY RESOLVED, WITH
+   IMPORTANT NEW FINDINGS.** This was not a stale/broken duplicate as
+   originally assumed — `dfeuinekmnrjjidxcmaq` is a genuine, intentional
+   development database (confirmed via the password containing the
+   literal string "Dev", and via the Supabase dashboard showing it named
+   `sobriety-support-dev`, a real distinct project). **Important
+   additional discovery, itself the source of a near-miss:** the Prisma
+   CLI does NOT respect `.env.local`'s precedence the way the Next.js
+   app does — `prisma.config.ts` explicitly prioritizes `DIRECT_URL` over
+   `DATABASE_URL`, and both were sourced from `.env` (production) by
+   default. A migration command was run believing it targeted dev; it
+   actually targeted production, and only failed to cause damage because
+   it happened to error out (on an unrelated pre-existing migration
+   inconsistency) before writing anything. This is now documented
+   prominently at the top of `SJ_CLINICAL_SCORING_HANDOFF.md` in the
+   `sobriety-support` repo, given a prior instance of this exact kind of
+   confusion cost approximately two days of repair work.
+7. **`medical_aid_type` vs `medical_aid` mismatch — still not resolved.**
+   Genuinely minor, still sending `null` for `medical_aid` to SJ. Low
+   priority, carry forward.
+
+### Additional work completed beyond the original list
+
+- **Full git cleanup in StabilisBot** — 18 untracked/scattered files
+  reviewed individually and committed in careful, reviewed batches (not
+  one blind commit). One real data-safety check performed and resolved:
+  a `backups/` file was confirmed to contain only synthetic test data
+  before being committed, avoiding a possible real-PII-in-git-history
+  mistake.
+- **Full git cleanup in `sobriety-support`** — the previously-uncommitted
+  July 15th patient-archival migration was confirmed already-deployed to
+  production and properly committed to close the gap in git history.
+  Two files confirmed to contain REAL, currently-active patient data
+  (`patient-archive-review-*.csv`, `patient-review-*.csv`) were added to
+  `.gitignore` — must never be committed or displayed in a chat again.
+
+### Honest summary of what remains before "deploy to real callers"
+
+1. Decide when to flip `GRACE_MODE`'s default (or build the equivalent
+   switch for the new `/api/v2/message` route to become primary) — a
+   deliberate decision for a fresh session, not a technical blocker.
+2. The minor `medical_aid_type`/`medical_aid` field mismatch (#7 above).
+3. Railway deployment itself has still never happened, independent of
+   any of tonight's work — the new code exists correctly in git, but
+   nothing has been deployed anywhere yet.
+
+Everything else that was open at the start of this extended session is
+now genuinely closed, verified with real evidence at every step — not
+just claimed.
+
+
 
 
 
