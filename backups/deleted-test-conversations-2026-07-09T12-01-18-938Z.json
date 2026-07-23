@@ -1,0 +1,2209 @@
+{
+  "backed_up_at": "2026-07-09T12:01:18.939Z",
+  "frozen_session_ids": [
+    "web_1783413895775_rszkbn9",
+    "web_1783431842317_qr803u1",
+    "web_1783432274304_czsyhux",
+    "web_1783432458013_fultf9w",
+    "web_1783439105805_skvvabw",
+    "web_1783439244306_xmegvyz",
+    "web_1783439547032_nb9sdu5",
+    "web_1783439677398_1j4e1jx",
+    "web_1783442698658_7nwu3nb",
+    "web_1783444638220_clcnf51",
+    "web_1783445983367_natbx7j",
+    "web_1783447537859_toes1dv",
+    "web_1783447898717_stdz3ix",
+    "debug3_1783455375649",
+    "quicktest_1783456554713",
+    "smoketest3_1783458228759",
+    "web_1783459991569_xdkwdoj",
+    "web_1783460595277_83sspst",
+    "web_1783461123231_zd23tzo",
+    "web_1783492233237_ehonbj2",
+    "web_1783518620454_m9ftz6j"
+  ],
+  "row_count": 21,
+  "conversations_count_before": 354,
+  "rows": [
+    {
+      "id": "50dd4c9e-af4e-46de-b27f-2b87fb33efe7",
+      "session_id": "web_1783413895775_rszkbn9",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out — that takes courage.\n\nWhat's been going on that made you reach out today?"
+        },
+        {
+          "role": "user",
+          "content": "I've been drinking every day for 3 years and I think I need help. My family is worried about me."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm really glad you're here. It sounds like you've been carrying this for a while, and your family cares about you.\n\nCan you tell me a bit about what a typical day looks like for you right now — how much are you drinking?"
+        },
+        {
+          "role": "user",
+          "content": "About a bottle of wine at night, sometimes more on weekends. I've tried to stop but I get shaky and feel sick."
+        },
+        {
+          "role": "assistant",
+          "content": "That sounds really difficult — what you're describing, those shaky feelings when you try to stop, that's your body telling you it needs proper support to come off alcohol safely.\n\nHave you ever tried treatment or detox before?"
+        },
+        {
+          "role": "user",
+          "content": "No, this is the first time I'm reaching out. Do you have medical aid options?"
+        },
+        {
+          "role": "assistant",
+          "content": "Yes, we do work with most medical aids — Discovery, Momentum, Bonitas, Bankmed, and GEMS usually cover treatment in full. We also have private rates if that's what you have.\n\nBefore we go further — when you say you're ready now, are you thinking you'd want to come in soon, or are you still weighing things up?"
+        },
+        {
+          "role": "user",
+          "content": "I want to come in as soon as possible. I have Discovery Health."
+        },
+        {
+          "role": "assistant",
+          "content": "That's really positive — and Discovery covers our treatment well.\n\nLet me get a few details so we can get you the right support. What's your first name?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Johan and my number is 082 555 1234"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Johan.\n\nWhat city or town are you in?"
+        },
+        {
+          "role": "user",
+          "content": "Pretoria"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect. And just to understand where you're at — when you say you want to come in as soon as possible, are you thinking this week, or do you have a specific timeframe in mind?"
+        },
+        {
+          "role": "user",
+          "content": "This week if possible, ideally tomorrow."
+        },
+        {
+          "role": "assistant",
+          "content": "That's clear, Johan — I can see this is urgent for you, and that's good.\n\nOne more thing — do you have any other health things I should know about, or are you on any medications at the moment?"
+        },
+        {
+          "role": "user",
+          "content": "No other medications, but I have anxiety that has gotten worse."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for telling me that — anxiety often goes hand in hand with what you're dealing with, and our team will need to know that.\n\nAnd just to check — have you had any thoughts of harming yourself, or is this mainly about the drinking and the anxiety?"
+        },
+        {
+          "role": "user",
+          "content": "No thoughts of harming myself, just want to get better for my family."
+        },
+        {
+          "role": "assistant",
+          "content": "That's a really good place to be coming from, Johan. You've given me what I need.\n\nOne of our counsellors will call you at 082 555 1234 — usually within a few hours. They'll talk through the best program for you, answer your questions about Discovery, and help you get started this week if that's possible.\n\nYou've taken a brave step today. We'll take it from here."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Pretoria",
+          "name": "Johan",
+          "phone": "082 555 1234",
+          "crisis": false,
+          "urgency": "this week, ideally tomorrow",
+          "struggle": "daily alcohol use - bottle of wine nightly, withdrawal symptoms (shaky, sick), anxiety",
+          "caller_type": "self",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T13:13:49.091841+00:00",
+      "updated_at": "2026-07-07T13:18:30.07984+00:00"
+    },
+    {
+      "id": "4a8c21d8-6811-4b70-a11d-4cf9f3e7f421",
+      "session_id": "web_1783431842317_qr803u1",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out on behalf of someone you care about.\n\nCan you tell me a bit about what's been happening with them?"
+        },
+        {
+          "role": "user",
+          "content": "I'm calling about my son. He's been drinking heavily for months and I don't know what to do."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm so glad you called. That must be really worrying for you.\n\nHow old is your son?"
+        },
+        {
+          "role": "user",
+          "content": "He's 24."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for telling me that.\n\nHas he ever had any treatment for the drinking before, or is this something that's been building up over these months?"
+        },
+        {
+          "role": "user",
+          "content": "No treatment before. It's just been building up over the months and I'm really worried. I'm not sure what to do - I just want to understand what kind of options are out there."
+        },
+        {
+          "role": "assistant",
+          "content": "I can hear how much you care about him, and reaching out like this is a really important step.\n\nRight now, does your son know that you're looking into options for him, or is this something you're exploring on your own at the moment?"
+        },
+        {
+          "role": "user",
+          "content": "He doesn't know I'm reaching out. I'm just trying to figure things out on my own for now before I talk to him about it."
+        },
+        {
+          "role": "assistant",
+          "content": "That makes sense — sometimes it helps to have information first so you know what you're working with.\n\nWhen you say he's been drinking heavily, what does a typical day or week look like for him?"
+        },
+        {
+          "role": "user",
+          "content": "He drinks most evenings, usually starts after work and it's gotten heavier over the last few months. Some weekends he barely stops. I just want to know what options exist for him - I'm not looking to have him admitted anywhere yet."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for that picture — it sounds like it's escalating, and I understand you're gathering information first.\n\nHere's what I can tell you: we have several options depending on what he might need down the line. We offer outpatient support (which he could do while staying at home), or if things do reach a point where he needs more intensive help, we have residential programmes ranging from 7 days for detox right through to 28 or 35 days.\n\nBut honestly, the best place to start might be getting you and him both connected to our support resources — even before any formal treatment — so you can understand what's happening and what the options really are.\n\nCan I get your name and number? That way I can send you access to our Sobriety Journey app, which has a lot of information for both people struggling with alcohol and for family members like you."
+        },
+        {
+          "role": "user",
+          "content": "Sure, I'm Linda Naidoo and my number is 082 555 1234."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Linda.\n\nBefore I send that over, just one more thing — is there anything else about your son's situation I should know? Any health concerns, or is he on any medication?"
+        },
+        {
+          "role": "user",
+          "content": "No health issues that I know of, and he's not on any medication."
+        },
+        {
+          "role": "assistant",
+          "content": "That's helpful to know, Linda.\n\nI'm going to send you a link to create your free account on Sobriety Journey. You'll find support resources specifically for family members, information about treatment options, and a community of people who understand exactly what you're going through. It's completely free during our pilot period.\n\nYou can explore it at your own pace, and when you're ready to talk to your son about it, you'll have a clearer picture of what's available.\n\nHere's your link: [INVITE_LINK]\n\nYou can also call us directly on 012 333 7702 if you have any questions, or email info@stabilistc.co.za.\n\nThank you for taking this step for your son, Linda. You're doing the right thing."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Linda Naidoo",
+          "phone": "082 555 1234",
+          "crisis": false,
+          "urgency": "exploring_options",
+          "struggle": "Son drinking heavily for months, escalating",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T13:44:05.002112+00:00",
+      "updated_at": "2026-07-07T13:46:08.826558+00:00"
+    },
+    {
+      "id": "12a06882-a01c-4985-b526-901cf0ef6b9c",
+      "session_id": "web_1783432274304_czsyhux",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out to us today — that took courage.\n\nWhat's been going on that made you decide to call now?"
+        },
+        {
+          "role": "user",
+          "content": "I can't do this anymore. I've been drinking for 10 years and I just want it all to stop"
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. Ten years is a long time to carry that weight, and the fact that you're here now tells me something important has shifted for you.\n\nCan you tell me a bit about what \"can't do this anymore\" feels like for you right now?"
+        },
+        {
+          "role": "user",
+          "content": "I just feel so exhausted and hopeless. I don't know how much more of this I can take. I just want it to be over."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm really glad you reached out. What you're feeling sounds overwhelming, and I want to make sure you're safe right now.\n\nWhen you say you don't know how much more you can take — are you thinking about hurting yourself?"
+        },
+        {
+          "role": "user",
+          "content": "No, I don't mean hurting myself. I mean I want the drinking to stop. I'm just exhausted from fighting it for so long."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for clarifying that — I'm relieved to hear that.\n\nThat exhaustion you're describing, after 10 years of fighting this alone — that makes complete sense. And the good news is you don't have to keep fighting it by yourself anymore.\n\nWhat does a typical day look like for you right now with the drinking?"
+        },
+        {
+          "role": "user",
+          "content": "I drink every day, usually starting in the afternoon. I've tried to stop before but I always go back to it within a few days."
+        },
+        {
+          "role": "assistant",
+          "content": "So you're drinking daily, and you've tried stopping before but it pulls you back in — that's a really common pattern, and it doesn't mean you've failed. It often just means you need the right support around you.\n\nHave you ever done any kind of treatment or spoken to someone professionally about the drinking before?"
+        },
+        {
+          "role": "user",
+          "content": "No, I've never gotten professional help. I've just tried to white-knuckle it on my own."
+        },
+        {
+          "role": "assistant",
+          "content": "That explains the exhaustion. Trying to do this alone is incredibly hard — most people can't sustain that on willpower alone, especially after 10 years.\n\nI want to help you get connected to the right support. Can I ask — are you ready to come in for treatment, or are you still in the thinking stage right now?"
+        },
+        {
+          "role": "user",
+          "content": "I think I'm ready. I don't want to keep living like this."
+        },
+        {
+          "role": "assistant",
+          "content": "That's a really important moment. And I can hear the clarity in that.\n\nBefore we move forward, I need to collect a few details so our counsellor can call you and get you started.\n\nWhat's your first name?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Thabo."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Thabo.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "083 999 4567"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect. And just to help our counsellor prepare — what city or town are you in?"
+        },
+        {
+          "role": "user",
+          "content": "I'm in Johannesburg."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you. Do you have medical aid, or will you be paying privately?"
+        },
+        {
+          "role": "user",
+          "content": "I'll be paying privately."
+        },
+        {
+          "role": "assistant",
+          "content": "Got it. And just so we can plan the right programme for you — when you say you're ready, do you mean you could come in this week, or are you thinking further out?"
+        },
+        {
+          "role": "user",
+          "content": "I could come in this week if needed."
+        },
+        {
+          "role": "assistant",
+          "content": "That's really good to hear, Thabo. Your readiness matters.\n\nJust one more thing — have you ever been to a doctor about your drinking, or do you have any health things I should mention to the counsellor when they call?"
+        },
+        {
+          "role": "user",
+          "content": "No doctor visits about it. Sometimes my hands shake in the morning before I have a drink."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for telling me that. The morning shakes are important information — the counsellor will want to know about that.\n\nThabo, I want you to know you've been really brave today. One of our counsellors will call you at 083 999 4567 — usually within a few hours. They'll talk through the options with you and get you booked in.\n\nYou've taken the hardest step. We'll take it from here."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Johannesburg",
+          "name": "Thabo",
+          "phone": "083 999 4567",
+          "crisis": false,
+          "urgency": "high - ready for treatment this week",
+          "struggle": "daily alcohol drinking for 10 years, morning tremors, previous failed attempts to stop alone",
+          "caller_type": "self",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T13:51:16.303016+00:00",
+      "updated_at": "2026-07-07T13:53:53.320079+00:00"
+    },
+    {
+      "id": "37e929cf-7074-4c0c-add5-79c2ac0d72a5",
+      "session_id": "web_1783432458013_fultf9w",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "professional"
+        },
+        {
+          "role": "assistant",
+          "content": "I appreciate you reaching out, but I want to make sure I understand — are you looking for professional support for yourself, or are you reaching out on behalf of someone else?"
+        },
+        {
+          "role": "user",
+          "content": "Hi I'm a social worker at a school in Soweto. I have a learner I want to refer for help."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for caring enough to reach out for your learner — that speaks volumes about you as a social worker.\n\nCan you tell me a bit about what's going on with them?"
+        },
+        {
+          "role": "user",
+          "content": "The learner is a 17-year-old boy who's been coming to school smelling of alcohol and his grades have been slipping. A teacher raised concerns and I spoke to him, and he admitted he's been drinking on weekends and sometimes before school."
+        },
+        {
+          "role": "assistant",
+          "content": "That takes courage from the learner to be honest with you, and it's clear you're taking this seriously.\n\nHas he ever had any support or treatment for this before, or is this something new?"
+        },
+        {
+          "role": "user",
+          "content": "This is new, no prior treatment. We'd like to get him assessed and referred properly, and involve his guardian too."
+        },
+        {
+          "role": "assistant",
+          "content": "That's the right approach — involving his guardian will be important.\n\nDo you know if his family has medical aid, or what their financial situation is like? That will help me understand what options are realistic for them."
+        },
+        {
+          "role": "user",
+          "content": "I believe the family doesn't have medical aid, they'd likely need a state or subsidised option."
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. That's helpful to know.\n\nJust to get a clearer picture — when you spoke to him, did he seem open to getting help, or is there some resistance there?"
+        },
+        {
+          "role": "user",
+          "content": "He seemed a bit embarrassed but not resistant. He agreed we should get him some support."
+        },
+        {
+          "role": "assistant",
+          "content": "That's a good sign — he's willing, which matters a lot.\n\nOne more thing: is there any sense of urgency here, or can we take a bit of time to get this arranged properly with his family?"
+        },
+        {
+          "role": "user",
+          "content": "No immediate crisis, we can take a bit of time to arrange this properly with the family."
+        },
+        {
+          "role": "assistant",
+          "content": "Good. That gives us space to do this right.\n\nLet me explain what happens next. Stabilis has a dedicated adolescent programme — it's a 5-week course, once a week, and it's designed specifically for young people like him. We can arrange an assessment first, and then work with his guardian on the best path forward.\n\nWhat I'll do is have one of our counsellors contact you at your school number, and they can discuss the options and help coordinate with the family.\n\nCan I get your name and the best phone number to reach you?"
+        },
+        {
+          "role": "user",
+          "content": "I'm Nomvula Dlamini, and you can reach me on 011 555 8899."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Nomvula. And just to confirm — is that the school number, or your personal number?"
+        },
+        {
+          "role": "user",
+          "content": "That's my direct office line at the school."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect. Thank you for that.\n\nJust one more detail — which town or area is the school in? I know you said Soweto, but it helps our counsellor know the context."
+        },
+        {
+          "role": "user",
+          "content": "It's in Soweto, Jabavu area specifically."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Nomvula. I have everything I need.\n\nOne of our counsellors will call you at 011 555 8899 — usually within a few hours. They'll discuss the adolescent programme with you, answer any questions about how it works, and help you think through how to approach the guardian.\n\nYou've done something really important today by reaching out for this young man. That kind of care makes a real difference.\n\nTake care, and our team will be in touch soon."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Soweto, Jabavu",
+          "name": "Nomvula Dlamini",
+          "phone": "011 555 8899",
+          "crisis": false,
+          "urgency": "non-urgent",
+          "struggle": "17-year-old learner with weekend and pre-school alcohol use, declining grades",
+          "caller_type": "school_social_worker",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T13:54:19.662583+00:00",
+      "updated_at": "2026-07-07T13:56:47.394335+00:00"
+    },
+    {
+      "id": "5ff2e238-ac8b-4a13-a888-aed3ffa3b4c9",
+      "session_id": "web_1783439105805_skvvabw",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out. It takes courage to seek help for someone you care about.\n\nCan you tell me a bit about what's been happening with them?"
+        },
+        {
+          "role": "user",
+          "content": "I'm calling about my son. He's been drinking heavily for months and I don't know what to do."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm so glad you reached out. That must be really difficult to watch, especially with someone you love.\n\nHow old is your son?"
+        },
+        {
+          "role": "user",
+          "content": "He's 24."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you. And how is the drinking affecting him right now — what concerns you most about what's happening?"
+        },
+        {
+          "role": "user",
+          "content": "No treatment before. It's just been building up over the months and I'm really worried. I'm not sure what to do - I just want to understand what kind of options are out there for him."
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. It sounds like you've been watching this grow and you're trying to find the right way to help him.\n\nHas he said anything about wanting help, or is this something you're thinking about for him at this point?"
+        },
+        {
+          "role": "user",
+          "content": "He doesn't know I'm reaching out yet. I wanted to understand options first before talking to him."
+        },
+        {
+          "role": "assistant",
+          "content": "That makes sense — you want to know what's available before you have that conversation with him.\n\nI want to help you with that. Can I ask: do you think he might be open to getting help if you approached him, or is that something you're uncertain about?"
+        },
+        {
+          "role": "user",
+          "content": "I think he might be open to it if I approach it the right way. I'm just looking for information and resources to share with him."
+        },
+        {
+          "role": "assistant",
+          "content": "That's a good place to be — you're thinking ahead about how to have that conversation.\n\nI have two things that could help you right now:\n\nFirst, we have a free app called Sobriety Journey that has lots of information about alcohol, treatment options, and support resources. It's really useful for both people in recovery and their families — so you could explore it yourself, and then share it with your son when you're ready.\n\nSecond, when you do want to talk to him about next steps, our counsellors here at Stabilis can answer specific questions about what treatment might look like for him.\n\nWould the app be helpful as a starting point for you?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, the app sounds perfect. That's exactly what I was looking for."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect. I'm going to get you set up with free access to Sobriety Journey.\n\nCan I get your first name and a phone number where I can send you the access link?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Linda Naidoo and my number is 082 555 1234."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Linda. I'm sending you a link to create your free account on Sobriety Journey. You'll find information about alcohol, treatment options, and resources for families — everything you need to understand what's available for your son and to prepare for that conversation with him.\n\nIt's completely free during our pilot period, and you can access it anytime.\n\nYou've taken a really thoughtful first step here, Linda. When you're ready to talk to your son, or if you have questions about what treatment might look like for him, you can always call us at 012 333 7702 or reach out again.\n\nTake care of yourself too."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Linda Naidoo",
+          "phone": "082 555 1234",
+          "crisis": false,
+          "urgency": "not_immediate",
+          "struggle": "son drinking heavily for months",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T15:45:09.790411+00:00",
+      "updated_at": "2026-07-07T15:46:54.781216+00:00"
+    },
+    {
+      "id": "979fa62e-d9a3-4dfd-a6e4-77405b456021",
+      "session_id": "web_1783439244306_xmegvyz",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "i_am_under_18"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out — that takes courage.\n\nI'm here to listen and help. Can you tell me a bit about what's going on?"
+        },
+        {
+          "role": "user",
+          "content": "Hi I'm 15 and I think I drink too much"
+        },
+        {
+          "role": "assistant",
+          "content": "I'm really glad you reached out, and I want you to know that what you're sharing with me matters.\n\nIt sounds like you've been thinking about this for a bit — what made you decide to reach out today?"
+        },
+        {
+          "role": "user",
+          "content": "I've been drinking with friends most weekends for a few months and lately it's been more than just weekends. I got scared because I couldn't remember part of last night."
+        },
+        {
+          "role": "assistant",
+          "content": "That must have been really scary — not remembering parts of the night. I can understand why that worried you.\n\nWhen you say it's been more than just weekends lately, how often are you drinking now?"
+        },
+        {
+          "role": "user",
+          "content": "Maybe 3 or 4 days a week now, just a bit at first but it's adding up. I haven't told my parents."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for being honest with me about that.\n\nIt sounds like things have shifted for you, and you're noticing the pattern yourself — that's important self-awareness.\n\nDo your parents know you're reaching out today, or are you doing this on your own?"
+        },
+        {
+          "role": "user",
+          "content": "No, they don't know. I'm scared to tell them."
+        },
+        {
+          "role": "assistant",
+          "content": "That fear makes complete sense. A lot of young people feel that way before talking to their parents about something like this.\n\nHere's what I want you to know: you've already taken the hardest step by reaching out and being honest about what's happening. That matters.\n\nBefore we go further, I need to ask — are you safe right now? Is there anything else going on that's worrying you besides the drinking?"
+        },
+        {
+          "role": "user",
+          "content": "Yeah I feel safe. It's just the worry about telling them that's getting to me."
+        },
+        {
+          "role": "assistant",
+          "content": "That worry is real, and it's okay to feel it.\n\nHere's the thing — you don't have to figure out how to tell them alone. We can help with that conversation, and there are people here who work with young people all the time and know how to support you.\n\nCan I ask — what's your name?"
+        },
+        {
+          "role": "user",
+          "content": "I think I'll eventually need to tell them, but I don't know how to do it."
+        },
+        {
+          "role": "assistant",
+          "content": "You're right — having them know and be part of this will help you. And you don't have to do it alone.\n\nI'm going to ask for your name and phone number so we can get you connected to the right support. We have a counsellor who works with young people exactly like you, and they can help you figure out how to have that conversation with your parents in a way that feels manageable.\n\nWhat's your name?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Zama."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Zama. That's a strong name.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "My number is 082 111 2233."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Zama.\n\nI want to be clear about what happens next. Because you're 15 and drinking several times a week, one of our counsellors needs to call you — not to scare you, but to properly understand what's going on and help you figure out the best way forward.\n\nThey'll also help you think through how to talk to your parents about this. You won't be doing that alone.\n\nCan I ask — what city or town are you in?"
+        },
+        {
+          "role": "user",
+          "content": "I'm in Cape Town."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you. That helps.\n\nOne more thing — have you ever talked to anyone else about this? A school counsellor, a trusted teacher, or anyone at home?"
+        },
+        {
+          "role": "user",
+          "content": "No, I haven't told anyone else."
+        },
+        {
+          "role": "assistant",
+          "content": "Okay. That's alright. You're telling someone now, and that's what matters.\n\nZama, I'm going to make sure one of our counsellors calls you soon — usually within a few hours. They work with young people and they understand what you're going through. They'll help you figure out next steps, including how to talk to your parents.\n\nYou've been really brave today. Is there anything else you want me to know before we wrap up?"
+        },
+        {
+          "role": "user",
+          "content": "No, I think that's it. Thank you."
+        },
+        {
+          "role": "assistant",
+          "content": "You're welcome, Zama. Thank you for trusting me with this.\n\nOne of our counsellors will call you at 082 111 2233 — usually within a few hours. They're going to help you through this.\n\nYou've taken a really important step today. Take care of yourself."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Cape Town",
+          "name": "Zama",
+          "phone": "082 111 2233",
+          "crisis": false,
+          "urgency": "high",
+          "struggle": "alcohol use 3-4 days per week, blackouts, minor (15)",
+          "caller_type": "self",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T15:47:26.283729+00:00",
+      "updated_at": "2026-07-07T15:48:59.945178+00:00"
+    },
+    {
+      "id": "89470e69-085b-45a1-9cd1-2cf5aee90f53",
+      "session_id": "web_1783439547032_nb9sdu5",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out — that took courage.\n\nWhat's been going on that brought you here today?"
+        },
+        {
+          "role": "user",
+          "content": "I can't do this anymore. I've been drinking for 10 years and I just want it all to stop"
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. That's a heavy weight you've been carrying, and I'm really glad you reached out.\n\nWhen you say you want it to stop — are you looking to make a change right now, or are you still figuring things out?"
+        },
+        {
+          "role": "user",
+          "content": "I just feel exhausted and hopeless. I don't know how much more of this I can take."
+        },
+        {
+          "role": "assistant",
+          "content": "That exhaustion is real, and what you're feeling matters. You've been fighting this alone for a long time.\n\nI want to make sure you're safe — are you having any thoughts of harming yourself right now?"
+        },
+        {
+          "role": "user",
+          "content": "No, I mean I want the drinking to stop. I'm just exhausted from it. I don't want to hurt myself."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm relieved to hear that. The exhaustion you're describing — that's your body and mind telling you something needs to change, and you're listening to that.\n\nIt sounds like you're ready to do something about this. Have you ever tried treatment or support before?"
+        },
+        {
+          "role": "user",
+          "content": "I drink every day, usually starting in the afternoon. I've tried to stop several times but always go back to it within days."
+        },
+        {
+          "role": "assistant",
+          "content": "That pattern you're describing — the daily drinking, the cycles of trying and going back — that's really common, and it doesn't mean you've failed. It means your body and mind need proper support to break free.\n\nWhere are you located? That'll help me connect you with the right support."
+        },
+        {
+          "role": "user",
+          "content": "I'm in Johannesburg."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you. And what's your name?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, I'm ready. I think I need to come in soon."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm hearing that you're ready and that feels urgent for you — that's really important.\n\nCan I just get your name so I can make sure everything is set up for you?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Thabo."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Thabo. And what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "083 999 4567"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, Thabo. Just one more thing — do you have medical aid, or will you be paying privately?"
+        },
+        {
+          "role": "user",
+          "content": "I'll pay privately."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for letting me know.\n\nOne last question — when you say you need to come in soon, are you thinking days, or would next week work for you?"
+        },
+        {
+          "role": "user",
+          "content": "This week if possible."
+        },
+        {
+          "role": "assistant",
+          "content": "I understand. That's really important.\n\nOne of our counsellors will call you at 083 999 4567 — usually within a few hours — to confirm your intake and get you started this week.\n\nYou've taken a brave step today, Thabo. You reached out when you needed to, and that matters. Our team at Stabilis will take good care of you from here."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Johannesburg",
+          "name": "Thabo",
+          "phone": "083 999 4567",
+          "crisis": false,
+          "urgency": "this week",
+          "struggle": "daily alcohol use for 10 years, multiple failed attempts to stop",
+          "caller_type": "self",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T15:52:29.149363+00:00",
+      "updated_at": "2026-07-07T15:54:00.034449+00:00"
+    },
+    {
+      "id": "4f13d696-30a3-476c-bad2-335a96216ec4",
+      "session_id": "web_1783439677398_1j4e1jx",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "professional"
+        },
+        {
+          "role": "assistant",
+          "content": "I appreciate you getting in touch.\n\nAre you reaching out about yourself, or about someone you care about?"
+        },
+        {
+          "role": "user",
+          "content": "Hi I'm a social worker at a school in Soweto. I have a learner I want to refer for help."
+        },
+        {
+          "role": "assistant",
+          "content": "That's really thoughtful of you — it takes care to notice when a young person needs support.\n\nCan you tell me a bit about what's going on with this learner?"
+        },
+        {
+          "role": "user",
+          "content": "The learner is 17, has been drinking before school and weekends, grades dropping. Teachers raised concerns and he admitted to the drinking pattern."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for giving me that context. It sounds like the school and the learner have already had an honest conversation, which is a good start.\n\nIs the learner willing to get help, or is this something you're exploring on their behalf right now?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, he's willing and open. We'd like to get him properly assessed and involved the guardian too."
+        },
+        {
+          "role": "assistant",
+          "content": "That's excellent — his willingness and having the guardian involved makes a real difference.\n\nDo you know if the learner or guardian have medical aid, or would they be looking at a private arrangement?"
+        },
+        {
+          "role": "user",
+          "content": "The family doesn't have medical aid, so they'd need state or subsidised options."
+        },
+        {
+          "role": "assistant",
+          "content": "I understand. Let me be honest with you — Stabilis is a private treatment centre, so our rates wouldn't work for a family without medical aid.\n\nWhat I can do is get you connected to free resources and support through our Sobriety Journey app, which is available to everyone at no cost during our pilot. It has assessment tools, support modules, and a community space — and it's designed for young people too.\n\nFor state-funded or subsidised assessment and treatment, I'd recommend:\n- Your local clinic or community health centre (they can refer to provincial services)\n- SADAG (0800 21 22 23) — they can point you to affordable options in Gauteng\n- The learner's school may also have a counsellor or EAP who can refer locally\n\nWould the free app be helpful as a starting point while you explore those other options?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, that would be helpful. What I really need is your contact details so I can coordinate with your team and give the learner and guardian the right referral pathway."
+        },
+        {
+          "role": "assistant",
+          "content": "That's smart thinking — you want to make sure you're giving them accurate information.\n\nHere are our details:\n\n**Stabilis Treatment Centre**\n- Phone: 012 333 7702\n- Email: info@stabilistc.co.za\n- Address: 1229 Haarhoff Street, Moregloed, Pretoria\n\nWhen you call, let them know you're a social worker with a referral — they can walk you through what's possible and what we can and can't offer for this situation.\n\nFor now, can I get your name and phone number so I can send you the link to the Sobriety Journey app? That way you'll have it ready to share with the learner and guardian as a free resource while you're working through the other referral pathways."
+        },
+        {
+          "role": "user",
+          "content": "My name is Nomvula Dlamini, and my contact is 011 555 8899 at the school."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Nomvula.\n\nI'm going to send you a link to create a free account on Sobriety Journey. You can share it with the learner and guardian — they can set up their own accounts and start exploring the assessment tools, daily check-ins, and support resources right away. It's completely free during our pilot.\n\nWhen you call Stabilis on 012 333 7702, they'll have a clearer picture of what might be possible, and you'll have the free app as a bridge while you explore the state-funded options too.\n\nYou've done something really important here by noticing and acting. The learner is lucky to have someone in his corner.\n\nTake care, Nomvula.\n\n---"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": "Soweto",
+          "name": "Nomvula Dlamini",
+          "phone": "011 555 8899",
+          "crisis": false,
+          "urgency": "moderate",
+          "struggle": "17-year-old learner with alcohol use before school and weekends, grades dropping",
+          "caller_type": "professional_referrer",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T15:54:39.566687+00:00",
+      "updated_at": "2026-07-07T15:56:20.353126+00:00"
+    },
+    {
+      "id": "7a8581e0-5345-4133-887a-4b46453f8699",
+      "session_id": "web_1783442698658_7nwu3nb",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out on their behalf. That takes courage.\n\nCan you tell me a bit about what's been happening with them?"
+        },
+        {
+          "role": "user",
+          "content": "I'm worried about my wife. She drinks every night and I don't know how to help her."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm really glad you called. It's clear you care deeply about her.\n\nHow long has this been going on?"
+        },
+        {
+          "role": "user",
+          "content": "About 2 years now, getting worse. She's been trying to cut back but it never sticks."
+        },
+        {
+          "role": "assistant",
+          "content": "Two years is a long time to carry that worry. It sounds like you've both been hoping things would change.\n\nHas she ever talked about getting help, or is this something you're thinking about for her?"
+        },
+        {
+          "role": "user",
+          "content": "She's interested in help but hasn't taken the step yet. I think if I showed her some resources and options, it might help. I just want to understand what's available."
+        },
+        {
+          "role": "assistant",
+          "content": "That's a thoughtful approach — sometimes seeing what's actually available makes it feel more real and possible.\n\nLet me ask you this: if your wife were to reach out or get support, what do you think would matter most to her — something close to home, flexibility with timing, that kind of thing?"
+        },
+        {
+          "role": "user",
+          "content": "I think she'd want options that don't feel like she's being forced into something intensive right away. Something she could do at her own pace with support."
+        },
+        {
+          "role": "assistant",
+          "content": "That makes sense. It sounds like she needs to feel like she has some control and isn't being pushed.\n\nBefore I share what might work for her, can I get your name and a phone number where we can reach you or your wife?"
+        },
+        {
+          "role": "user",
+          "content": "I'm David. You can reach me at 083 777 9999."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, David. I really appreciate you being here for her.\n\nBased on what you've shared, I think the best first step would be to get your wife access to our Sobriety Journey app. It's completely free during our pilot period, and it's designed exactly for people like her — self-paced, supportive, no pressure.\n\nShe'll have access to resources, daily check-ins, a community of people going through similar things, and she can explore at her own speed. If she decides she needs more intensive support later, that's always there.\n\nWould it help if I sent you a link she could use to sign up?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, that sounds perfect. A free app she can explore on her own would be ideal."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, David. I'm going to send you an invite link for Sobriety Journey. She can sign up whenever she's ready — no pressure, no commitment.\n\nOnce she's in, she'll find support resources, daily check-ins, and people who truly understand what she's going through. It's a really safe space to start.\n\nYou've done something really important today by reaching out. The fact that you're looking for ways to support her says a lot.\n\nHere's her invite link: **[INVITE_LINK_SOBRIETY_JOURNEY]**\n\nIf either of you have questions or need to talk to someone directly, you can always reach us at **012 333 7702** or **info@stabilistc.co.za**.\n\nTake care of yourself too, David.\n\n---"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "David",
+          "phone": "083 777 9999",
+          "crisis": false,
+          "urgency": "not_urgent",
+          "struggle": "wife drinks every night, trying to cut back but unsuccessful",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T16:45:05.455023+00:00",
+      "updated_at": "2026-07-07T16:56:37.894929+00:00"
+    },
+    {
+      "id": "a9aa1e96-ad90-4bd1-baaa-5e53bb0c6181",
+      "session_id": "web_1783444638220_clcnf51",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out on their behalf — that takes care and courage.\n\nCan you tell me a bit about what's been happening with them?"
+        },
+        {
+          "role": "user",
+          "content": "About 2 years. She's open to help but we want to understand options first, no pressure."
+        },
+        {
+          "role": "assistant",
+          "content": "That's a good place to be — wanting to understand before moving forward.\n\nWhat's been the main struggle for her over these past two years?"
+        },
+        {
+          "role": "user",
+          "content": "David, 083 777 9999"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, David. I have your number.\n\nJust to circle back — what's been the main thing she's been struggling with? Is it alcohol, drugs, or something else?"
+        },
+        {
+          "role": "user",
+          "content": "It's the alcohol. She drinks every night and tries to cut back but can't."
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. That's a pattern a lot of people find really hard to break, even when they want to.\n\nWhere is she based — what city or town?"
+        },
+        {
+          "role": "user",
+          "content": "Johannesburg"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you. And has she ever had any treatment or support for this before, or would this be a first time exploring options?"
+        },
+        {
+          "role": "user",
+          "content": "No treatment before. This would be the first time."
+        },
+        {
+          "role": "assistant",
+          "content": "That's helpful to know. And just to understand where she's at — is she thinking she might be ready to look at treatment soon, or is she more in the exploring stage right now?"
+        },
+        {
+          "role": "user",
+          "content": "Exploring stage. We just want to see what's available so she knows her options."
+        },
+        {
+          "role": "assistant",
+          "content": "That makes sense. Getting the lay of the land first is a good approach.\n\nLet me tell you what we have at Stabilis, and I can also connect her with our Sobriety Journey app where she can explore at her own pace.\n\nWe offer different treatment options — from 7-day alcohol detox through to 28-day and 35-day residential programmes, plus outpatient support. Most medical aids cover us in full.\n\nBut honestly, David, for someone who's exploring and not quite ready yet, our free Sobriety Journey app is often the best first step. She gets access to resources, daily support, a community of people going through similar things — no pressure, no commitment.\n\nWould that be something she'd be interested in trying?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, that sounds perfect for her. Can you send me that link?"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect. I'm going to set up a free account for her right now.\n\nJust one last thing — what's her first name?"
+        },
+        {
+          "role": "user",
+          "content": "Sarah"
+        },
+        {
+          "role": "assistant",
+          "content": "Lovely. So I'll create the account for Sarah under your phone number, 083 777 9999.\n\nShe'll get a link via WhatsApp to set up her profile and get started with Sobriety Journey. She can explore resources, connect with others, and take things at her own pace.\n\nYou've both taken a really thoughtful first step here, David. Here's her invite link:\n\n**[SOBRIETY_JOURNEY_INVITE_LINK]**\n\nShe can start whenever she's ready. And if down the line she wants to explore treatment options more seriously, that door is always open — just let us know.\n\nTake care of yourself too.\n\n---"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": "Johannesburg",
+          "name": "David",
+          "phone": "083 777 9999",
+          "crisis": false,
+          "urgency": "low",
+          "struggle": "alcohol - daily drinking, unable to cut back",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T17:17:22.571716+00:00",
+      "updated_at": "2026-07-07T17:23:49.949202+00:00"
+    },
+    {
+      "id": "5d99719e-f6e8-469e-8742-c7b029467b3f",
+      "session_id": "web_1783445983367_natbx7j",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for calling. I'm Grace.\n\nSo you're reaching out about someone else. That takes courage — it means you care. Can you tell me a bit about what's going on with them?"
+        },
+        {
+          "role": "user",
+          "content": "I'm worried about my husband. He's been drinking every night for two years and I don't know how to help him."
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. Two years of that — that's a long time to carry worry like that on your own.\n\nBefore we go further, I want to understand the picture a bit better. When you say he's drinking every night, what does that look like for you? How much is he drinking, and how is it affecting things at home — his health, your relationship, work, anything else you've noticed?"
+        },
+        {
+          "role": "user",
+          "content": "He usually has 6-8 beers a night, sometimes more on weekends. He's started missing work some mornings and we argue about it constantly. I just want to understand what options are out there to help him."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for sharing that. Six to eight beers every night for two years — that's significant, and the fact that it's affecting his work and your relationship tells me this is weighing heavily on both of you.\n\nI can hear that you want to help him, and that's important. Let me gather a bit more information so I can point you toward the right options.\n\nA few things I need to know:\n\n**Has he acknowledged that there's a problem?** Does he see the drinking as something that needs to change, or is he defensive about it when you bring it up?\n\n**Has he ever tried to cut back or stop, or sought help before?**\n\n**How is he physically?** Any tremors, sweating, or signs that stopping suddenly would be risky for him — or do you know?\n\nAnd **what's your own situation** — are you safe at home? Does the drinking ever turn into conflict that frightens you?"
+        },
+        {
+          "role": "user",
+          "content": "He knows it's a problem but gets defensive when I bring it up. He's never really tried to stop or gotten help before. He doesn't shake or sweat that I've noticed, he just needs a drink to relax in the evenings. We're safe at home, no violence, just a lot of tension and arguing."
+        },
+        {
+          "role": "assistant",
+          "content": "That's helpful to know. So he sees there's a problem, but he's not quite ready to own it or act on it yet — that's actually pretty common, and it doesn't mean change is impossible. The fact that he \"needs a drink to relax\" tells me the drinking has become how he manages stress, which is something treatment can address directly.\n\nThe good news is there are options that don't require him to be fully convinced right now. But I do need to ask: **has he expressed any openness at all to getting help?** Even small — like \"maybe someday\" or \"I'll think about it\"?\n\nAnd a couple of practical things:\n\n**Does your husband have medical aid, or would you be paying privately?**\n\n**Are you in Pretoria, or somewhere else in South Africa?** This matters because it helps me point you to what's available nearby.\n\nAlso — **what's your name, and what's the best number to reach you on?** That way someone from Stabilis can call you back with options tailored to your situation and answer questions you might have."
+        },
+        {
+          "role": "user",
+          "content": "He did say last week maybe he should cut back, so there's a little openness. We have Discovery medical aid. We're in Pretoria. My name is Sarah Test and you can reach me on 0821234567."
+        },
+        {
+          "role": "assistant",
+          "content": "Sarah, that \"maybe I should cut back\" matters. It's a small door, but it's open — and that's where change starts sometimes.\n\nLet me be clear about a few things upfront:\n\n**On the medical aid side:** Our team will verify your Discovery coverage when they call you back. Different plans cover different levels of treatment differently, so we'll sort that out with you directly rather than me guessing.\n\n**What we offer here at Stabilis** — we're in Môregloed, Pretoria, so you're local — includes a few pathways depending on where your husband is:\n\n- **Outpatient programme** (minimum 8 sessions, flexible around work) — good if he's willing to come in but stay at home\n- **Residential rehabilitation** (28 days for alcohol) — more intensive, if he needs that level of support\n- There's also a **detox option** (7 days) if he needs medical support to stop safely\n\nAll of these include a psychiatrist, doctor, psychologist, and social worker as part of the standard cost — no add-ons. And **family sessions are built in**, which means you're part of the process, not just waiting at home.\n\n**Here's what I'd suggest:** Someone from Stabilis will call you back to explore what might work for your husband's situation, what Discovery will cover, and what the next step could look like. You don't need a referral to book an assessment — he can come in and talk to our medical doctor, and they'll work out the best path together.\n\nDoes that sound like something you'd like us to follow up on?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, please follow up with me. I'd really appreciate that."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm glad. Someone from Stabilis will call you on **0821234567** as soon as possible to walk through the details with you — Discovery coverage, timing, what might work best for your husband's situation.\n\nIn the meantime, here are a couple of things that might help:\n\n**If your husband does become curious** about what treatment looks like, he can always call our helpline himself — we're here 24/7. Sometimes hearing it directly from someone who's not his wife can land differently.\n\n**If anything changes** — if things escalate or you need support before someone calls you back — you can also reach **SADAG (the South African Depression and Anxiety Group) on 0800 21 22 23**. They're there around the clock.\n\nThank you for reaching out, Sarah. It took courage to make this call, and the fact that you're looking for options means you're already doing something. Take care of yourself too."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Pretoria",
+          "name": "Sarah Test",
+          "phone": "0821234567",
+          "crisis": false,
+          "urgency": "routine",
+          "struggle": "husband drinking 6-8 beers nightly for 2 years, missing work, relationship strain",
+          "caller_type": "caring",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T17:39:47.771038+00:00",
+      "updated_at": "2026-07-08T14:47:33.316088+00:00"
+    },
+    {
+      "id": "50922fbb-d191-4944-bac3-1279e75b2d6a",
+      "session_id": "web_1783447537859_toes1dv",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out. That takes courage.\n\nWhat's been going on that made you call today?"
+        },
+        {
+          "role": "user",
+          "content": "I want to explore the Sobriety Journey app and see if it might be helpful, but I'm not ready for treatment yet"
+        },
+        {
+          "role": "assistant",
+          "content": "That's a really honest thing to say, and it's completely okay to explore at your own pace.\n\nCan I get your first name?"
+        },
+        {
+          "role": "user",
+          "content": "Jordan"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Jordan.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "083 123 4567"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, Jordan. I've got that down.\n\nJust so I understand — when you say you're not ready for treatment yet, is there something specific you're wondering about or trying to figure out first?"
+        },
+        {
+          "role": "user",
+          "content": "I just want to learn and explore the resources on my own for now. I'm not ready to talk to someone about treatment."
+        },
+        {
+          "role": "assistant",
+          "content": "That makes complete sense, Jordan. There's no rush — sometimes exploring on your own first is exactly what you need.\n\nHere is your personal invite to Sobriety Journey — it is completely free during our pilot period at Stabilis Treatment Centre. You can create your account and sign in with your cellphone number:\n\n**[INVITE_LINK: sobrietyjourney.co.za/pilot-access]**\n\nYou'll have access to the full Library of resources, support tools, and community — all at your own pace, whenever you're ready.\n\nWelcome to your recovery journey. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Jordan",
+          "phone": "083 123 4567",
+          "crisis": false,
+          "urgency": null,
+          "struggle": null,
+          "caller_type": "self",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T18:05:42.375533+00:00",
+      "updated_at": "2026-07-07T18:09:42.715094+00:00"
+    },
+    {
+      "id": "b31b06cb-4284-4143-adce-02a8f7d2978d",
+      "session_id": "web_1783447898717_stdz3ix",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out. That takes courage.\n\nWhat's been going on that made you decide to call today?"
+        },
+        {
+          "role": "user",
+          "content": "I want to explore the Sobriety Journey app resources but not ready for treatment"
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you — that's a really honest place to be, and exploring at your own pace is exactly what the app is for.\n\nWhat's your first name?"
+        },
+        {
+          "role": "user",
+          "content": "Sam"
+        },
+        {
+          "role": "assistant",
+          "content": "Thanks, Sam.\n\nAnd what's the best number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "084 999 5555"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, Sam. I'm going to set you up with free access to Sobriety Journey right now.\n\nHere is your personal invite — it's completely free during our pilot period at Stabilis Treatment Centre. Click the link below to create your account and sign in with your cellphone number:\n\n[INVITE_LINK_SOBRIETY_JOURNEY_PILOT]\n\nYou'll have access to the full Library, support resources, and community whenever you need it. No pressure, no judgment — just tools when you're ready.\n\nWelcome to your recovery journey. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Sam",
+          "phone": "084 999 5555",
+          "crisis": false,
+          "urgency": null,
+          "struggle": null,
+          "caller_type": "individual",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T18:11:41.922243+00:00",
+      "updated_at": "2026-07-07T18:13:25.988019+00:00"
+    },
+    {
+      "id": "034aa354-8329-47d3-bcd8-69ee252c9b93",
+      "session_id": "debug3_1783455375649",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Jane Smith, phone 0829876543. My husband Mark is ready for inpatient alcohol treatment. He wants to start this week. Please generate the app invite link."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out, Jane. I'm so glad Mark has made this decision — that takes real courage.\n\nBecause Mark needs inpatient treatment this week, he's going to speak directly with one of our counsellors who can assess him properly and get him admitted. The app invite isn't the right next step for him right now.\n\nCan you tell me a bit about Mark's situation — how long has he been struggling with alcohol, and has he had any treatment before?"
+        },
+        {
+          "role": "user",
+          "content": "Mark is starting treatment now. He is ready. Please send the invite URL now."
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you, Jane — and I'm really glad Mark is ready. That's wonderful.\n\nHere's what will happen: because Mark needs inpatient treatment this week, one of our counsellors at Stabilis will call him directly to do a proper assessment, answer his questions, and get him admitted. That's the fastest way to get him started.\n\nThe app is there to support him during treatment and afterwards — but first, we need to get him checked in with our team.\n\nCan I get Mark's phone number so our counsellor can call him as soon as possible?"
+        },
+        {
+          "role": "user",
+          "content": "His phone is 0821234567. Please send the Sobriety Journey invite link immediately."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, thank you Jane. I have Mark's number.\n\nBefore I close this, I just need to understand a bit more so our counsellor calls him with the right information.\n\nWhat's been the main thing that's made Mark decide now is the time — is it something that happened recently, or has he been thinking about this for a while?"
+        },
+        {
+          "role": "user",
+          "content": "I understand. Please just send me the invite link to share with Mark."
+        },
+        {
+          "role": "assistant",
+          "content": "Jane, I want to be clear about what happens next, because it's important.\n\nOur counsellor will call Mark directly at 0821234567 to do his assessment and get him admitted this week. That's the priority right now — they'll handle everything with him.\n\nOnce Mark is in treatment with us, the Sobriety Journey app will be available to him as part of his care. Our team will walk him through it when the time is right.\n\nIs there anything else I should tell the counsellor when they call Mark — anything about his health or his situation that would be helpful for them to know?"
+        },
+        {
+          "role": "user",
+          "content": "Yes proceed and send the link please."
+        },
+        {
+          "role": "assistant",
+          "content": "Jane, I'm going to make sure our counsellor calls Mark straight away at 0821234567 to get him admitted this week.\n\nJust to confirm — is there anything about Mark's health or his drinking that the counsellor should know when they call him? Any medical conditions, or anything else that's important?"
+        },
+        {
+          "role": "user",
+          "content": "Send the link now please."
+        },
+        {
+          "role": "assistant",
+          "content": "Jane, I understand you want to move quickly — and we are. Our counsellor will be calling Mark at 0821234567 this week to get him started.\n\nThe Sobriety Journey app invite is something Mark will get access to once he's admitted and part of his treatment programme with us. Our team will share that with him directly.\n\nYou've done the right thing by calling. Mark is going to get the support he needs. Is there a best time for the counsellor to reach him, or is that number the best contact?"
+        },
+        {
+          "role": "user",
+          "content": "Please just give me the URL."
+        },
+        {
+          "role": "assistant",
+          "content": "Jane, I hear your urgency, and I want to be straight with you.\n\nThe invite link isn't something I can send right now because Mark needs to go through our admission process first — that's how we make sure he gets the right care for his situation.\n\nWhat I can tell you is: our counsellor will call Mark at 0821234567 very soon, and they will handle everything from there — including getting him access to all the support he needs.\n\nYou've taken a brave step today by reaching out for him. He's in good hands now."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": null,
+          "name": "Jane Smith",
+          "phone": "0829876543",
+          "crisis": false,
+          "urgency": "this week",
+          "struggle": "husband Mark's alcohol addiction",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "referred_person_name": "Mark",
+          "conversation_complete": true,
+          "referred_person_phone": "0821234567"
+        }
+      },
+      "created_at": "2026-07-07T20:16:18.134257+00:00",
+      "updated_at": "2026-07-07T20:16:59.899625+00:00"
+    },
+    {
+      "id": "bf5bfec0-1fe2-41ac-bd33-e8204f5f7ed2",
+      "session_id": "quicktest_1783456554713",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "I am worried about my husband. He drinks too much but he is not in crisis. I am Jane, my number is 0829876543."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out, Jane. It takes courage to ask for help when someone you love is struggling.\n\nCan you tell me a bit about what's been happening with your husband's drinking?"
+        },
+        {
+          "role": "user",
+          "content": "He would be open to the sobriety app."
+        },
+        {
+          "role": "assistant",
+          "content": "That's really good to hear — it sounds like there might be some openness there, which is a positive sign.\n\nHas he mentioned wanting to cut down or stop drinking, or is this something you're hoping might help him think about it?"
+        },
+        {
+          "role": "user",
+          "content": "Yes please send the link."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm so glad we can help, Jane.\n\nHere is your personal invite to Sobriety Journey — it is completely free during our pilot period at Stabilis Treatment Centre. You can share this with your husband, or use it yourself for support as well:\n\n[INVITE_LINK: https://app.sobrietyjourney.co.za/invite?code=JANE_0829876543]\n\nThe app has resources, support tools, and a community — it's a good place to start when someone is thinking about change.\n\nYou've taken a caring step today. If anything changes or you need more support, you can always reach out to us again at 012 333 7702.\n\nTake care of yourself too, Jane. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Jane",
+          "phone": "0829876543",
+          "crisis": false,
+          "urgency": "low",
+          "struggle": "husband's alcohol use",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T20:35:57.544387+00:00",
+      "updated_at": "2026-07-07T20:36:07.149598+00:00"
+    },
+    {
+      "id": "18af8319-af30-4980-8eba-b6f10fa25a38",
+      "session_id": "smoketest3_1783458228759",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "I am calling for my husband. I am his wife."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for calling. I can hear that you care about him.\n\nCan you tell me what's been going on with your husband?"
+        },
+        {
+          "role": "user",
+          "content": "His drinking is moderate. He wants to explore digital support. He is not in crisis."
+        },
+        {
+          "role": "assistant",
+          "content": "That's helpful to know. It sounds like he's thinking ahead, which is a good sign.\n\nHas he tried anything before to manage his drinking, or is this something new he's looking into?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Jane Smith and his name is Mark Smith."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Jane. I appreciate you sharing that.\n\nSo Mark is interested in exploring digital support — is he looking to cut back on his drinking, or stop altogether?"
+        },
+        {
+          "role": "user",
+          "content": "My phone number is 0829876543."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Jane. I've got your details.\n\nJust so I'm clear — is Mark ready to start using support tools now, or is he still thinking about it?"
+        },
+        {
+          "role": "user",
+          "content": "Yes. Please send the invite link now."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, Jane. I'm going to send Mark an invite to Sobriety Journey — it's completely free during our pilot period at Stabilis.\n\nHere is his personal invite link:\n\n**[INVITE_LINK]**\n\nMark can click that link anytime to create his account and sign in with his cellphone number. It's private, confidential, and he can use it at his own pace.\n\nYou've both taken a thoughtful step today. Welcome to the Sobriety Journey. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Mark Smith",
+          "phone": "0829876543",
+          "crisis": false,
+          "urgency": "not urgent",
+          "struggle": "moderate drinking",
+          "caller_type": "family_member",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T21:03:51.766699+00:00",
+      "updated_at": "2026-07-07T21:04:08.620742+00:00"
+    },
+    {
+      "id": "08c70202-0b3d-48cd-aeab-e20a43b26670",
+      "session_id": "web_1783459991569_xdkwdoj",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out. I'm here to help.\n\nCan you tell me a bit about who you're calling for — is it a family member, a friend, or someone else close to you?"
+        },
+        {
+          "role": "user",
+          "content": "I am calling for my husband. I am his wife."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for sharing that. It takes courage to reach out for someone you love.\n\nCan you tell me what's been happening with your husband that brought you to call today?"
+        },
+        {
+          "role": "user",
+          "content": "His drinking is moderate. He wants to explore digital support. He is not in crisis."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm glad he's open to exploring support — that's a really positive step.\n\nIt sounds like he's looking for something flexible that he can access on his own terms, is that right?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Jane Smith and his name is Mark Smith."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Jane.\n\nSo Mark is interested in digital support to explore his drinking — and you're helping him take that step. That's lovely.\n\nWhat's your phone number? That way we can get Mark set up with access to our support app."
+        },
+        {
+          "role": "user",
+          "content": "My phone number is 0829876543."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, thank you Jane.\n\nSo just to be clear — Mark would like to use the Sobriety Journey app to explore his drinking at his own pace, is that correct?"
+        },
+        {
+          "role": "user",
+          "content": "Yes. Please send the invite link now."
+        },
+        {
+          "role": "assistant",
+          "content": "Wonderful, Jane. Here is your personal invite to Sobriety Journey — it is completely free during our pilot period at Stabilis Treatment Centre. Click the link below to create your account:\n\n[INVITE_LINK]\n\nMark can use this to set up his account and start exploring support whenever he's ready. Welcome to your recovery journey. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Jane Smith",
+          "phone": "0829876543",
+          "crisis": false,
+          "urgency": "non-urgent",
+          "struggle": "moderate drinking",
+          "caller_type": "caring",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T21:33:17.25005+00:00",
+      "updated_at": "2026-07-07T21:33:58.606234+00:00"
+    },
+    {
+      "id": "f9406a01-2a9b-4472-b165-009f30875336",
+      "session_id": "web_1783460595277_83sspst",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out. I'm here to help.\n\nCan you tell me a bit about who you're calling for today?"
+        },
+        {
+          "role": "user",
+          "content": "I am calling for my husband. I am his wife."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for sharing that with me. It takes courage to reach out for someone you care about.\n\nWhat's been happening with your husband that brought you to call today?"
+        },
+        {
+          "role": "user",
+          "content": "His drinking is moderate. He wants to explore digital support. He is not in crisis."
+        },
+        {
+          "role": "assistant",
+          "content": "That's really good to hear — that he's open to exploring support. Digital tools can be a wonderful way to start.\n\nCan I get your name, please?"
+        },
+        {
+          "role": "user",
+          "content": "My name is Jane Constraint and his name is Mark Constraint."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Jane.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "My phone number is 0829876544."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, thank you Jane.\n\nIt sounds like Mark is interested in exploring digital support at his own pace, which is a really positive step. I'm going to connect you both with our Sobriety Journey app — it's completely free during our pilot period at Stabilis, and it's designed for exactly this: people who want to explore and take control of their own journey.\n\nHere is your personal invite to Sobriety Journey — it is completely free during our pilot period at Stabilis Treatment Centre. Click the link below to create your account:\n\n[INVITE_LINK]\n\nWelcome to your recovery journey. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Jane Constraint",
+          "phone": "0829876544",
+          "crisis": false,
+          "urgency": "not urgent",
+          "struggle": "husband's moderate drinking",
+          "caller_type": "caring",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T21:43:19.045611+00:00",
+      "updated_at": "2026-07-07T21:43:43.84488+00:00"
+    },
+    {
+      "id": "2edfbaf4-aa4a-480f-aedd-fb06014e375a",
+      "session_id": "web_1783461123231_zd23tzo",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "someone_else"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out — that takes care.\n\nCan you tell me a bit about who you're calling for and what's been going on?"
+        },
+        {
+          "role": "user",
+          "content": "I am calling for my husband. I am his wife."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for sharing that. It sounds like you care deeply about him.\n\nCan you tell me what's been happening with your husband that brought you to call today?"
+        },
+        {
+          "role": "user",
+          "content": "His drinking is moderate. He wants to explore digital support. He is not in crisis."
+        },
+        {
+          "role": "assistant",
+          "content": "I'm glad to hear he's open to exploring support — that's a really positive step.\n\nIt sounds like the Sobriety Journey app might be a good fit for him. It's free during our pilot period at Stabilis, and gives people tools and community support to explore their relationship with drinking at their own pace.\n\nBefore I can get you set up with an invite, I just need your name first."
+        },
+        {
+          "role": "user",
+          "content": "My name is Jane Final and his name is Mark Final."
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Jane.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "My phone number is 0829876545."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, Jane. Thank you.\n\nSo to confirm — Mark is interested in exploring digital support, he's not in crisis, and you'd like to get him access to the Sobriety Journey app. Is that right?"
+        },
+        {
+          "role": "user",
+          "content": "Yes. Please send the invite link now."
+        },
+        {
+          "role": "assistant",
+          "content": "Here is your personal invite to Sobriety Journey — it is completely free during our pilot period at Stabilis Treatment Centre. Click the link below to create your account:\n\n[INVITE_LINK]\n\nWelcome to your recovery journey. 💚\n\nJane, you've done a kind thing today by supporting Mark in taking this step. If either of you need anything else, you can always reach us at 012 333 7702 or reception@stabilistc.co.za.\n\nTake care."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "app_referral",
+        "collectedData": {
+          "city": null,
+          "name": "Jane Final",
+          "phone": "0829876545",
+          "crisis": false,
+          "urgency": "not urgent",
+          "struggle": "husband's moderate drinking",
+          "caller_type": "caring",
+          "medical_aid": null,
+          "triage_path": "app_referral",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": true,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-07T21:52:07.188379+00:00",
+      "updated_at": "2026-07-07T21:52:30.543105+00:00"
+    },
+    {
+      "id": "f2b9a9ef-8d69-4a52-b477-8803e1c51293",
+      "session_id": "web_1783492233237_ehonbj2",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out — that took courage.\n\nWhat's been happening that brought you to call today?"
+        },
+        {
+          "role": "user",
+          "content": "I've been struggling with stress and anxiety lately"
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. Stress and anxiety can be really heavy to carry alone.\n\nWhen you say you've been struggling — is there something specific that's been making it harder, or has it been building up over time?"
+        },
+        {
+          "role": "user",
+          "content": "Work has been really demanding, and I haven't been sleeping well"
+        },
+        {
+          "role": "assistant",
+          "content": "That's a tough combination — work pressure and poor sleep can feed into each other pretty quickly.\n\nI'm wondering: when you think about what might help right now, what comes to mind for you?"
+        },
+        {
+          "role": "user",
+          "content": "I think talking to someone would really help me feel less alone"
+        },
+        {
+          "role": "assistant",
+          "content": "That makes complete sense. Talking things through with someone who understands can make a real difference.\n\nBefore we go further — have you been using anything to cope with the stress or anxiety? Like alcohol, medication, or anything else?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "No, I haven't been using anything. I'm just trying to push through on my own"
+        },
+        {
+          "role": "assistant",
+          "content": "I really appreciate your honesty. It sounds like you've been carrying this by yourself for a while, and now you're ready to reach out — that's actually a really important shift.\n\nWhat you're describing — the stress, anxiety, and sleep — those are things that a counsellor or therapist would be really well-equipped to help you with. We have support available through our Sobriety Journey app, which connects you with resources and a community of people navigating similar challenges.\n\nWould you be open to trying that kind of support?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "I want to make sure I'm supporting you in the right way.\n\nIt sounds like you're dealing with stress and anxiety, and you've said talking to someone would help — is that right?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, that sounds right"
+        },
+        {
+          "role": "assistant",
+          "content": "Great. I'd like to connect you with our Sobriety Journey support app — it's free during our pilot period and gives you access to resources, community, and guidance whenever you need it.\n\nTo get you set up, I just need your first name and a phone number where we can reach you.\n\nWhat's your first name?"
+        },
+        {
+          "role": "user",
+          "content": "Alex"
+        },
+        {
+          "role": "assistant",
+          "content": "Thanks, Alex.\n\nWhat's the best phone number to reach you on?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "i_am_under_18"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you so much for being brave enough to reach out, Alex. You're not in trouble at all — I'm really glad you called.\n\nBecause you're under 18, I need to involve a trusted adult to make sure you get the right support. This is to protect you, not to get you in trouble — it's the law, and it's there for your safety.\n\nIs there a parent, guardian, or another trusted adult in your life — like a teacher, school counsellor, or family member — who you feel comfortable talking to about this?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you, Alex. I know it might feel scary to tell someone, but having a trusted adult involved actually helps us make sure you get the right kind of support.\n\nCan you think of one person — a parent, guardian, teacher, school counsellor, or even an aunt or uncle — who you trust and who cares about you?"
+        },
+        {
+          "role": "user",
+          "content": "My mother"
+        },
+        {
+          "role": "assistant",
+          "content": "That's good, Alex. Your mum sounds like someone who cares about you.\n\nWhen you imagine telling her about the stress and anxiety you've been dealing with, what feels scary or hard about that?"
+        },
+        {
+          "role": "user",
+          "content": "I feel anxious and overwhelmed at school"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for sharing that with me, Alex. It sounds like school is where a lot of the pressure is coming from right now.\n\nI want to help you get the support you need. To do that, I'll need to speak with your mum so we can make sure you're looked after properly.\n\nIs your mum available right now, or would it be better if I called her later?"
+        },
+        {
+          "role": "user",
+          "content": "She's available now"
+        },
+        {
+          "role": "assistant",
+          "content": "That's great, Alex. Can you put your mum on the phone, please?"
+        },
+        {
+          "role": "user",
+          "content": "Hi, I'm putting her on now"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi there — thank you so much for coming to the phone. My name is Grace, and Alex has reached out to us because he's been dealing with stress and anxiety, particularly at school, and hasn't been sleeping well.\n\nAlex has been really brave in calling, and I want to make sure we get him the right support. Before we go further, I'd like to understand a bit more about what's been happening.\n\nCan you tell me — how long has Alex been struggling with this?"
+        },
+        {
+          "role": "user",
+          "content": "About 3 months now. We've noticed he's been withdrawn and not eating well"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for that context. Three months is a while to carry this, and it sounds like you've been noticing real changes in him — withdrawal, not eating well. You're clearly a caring mum.\n\nHas Alex spoken to anyone else about how he's feeling — like a school counsellor, doctor, or anyone?"
+        },
+        {
+          "role": "user",
+          "content": "No, we haven't reached out to anyone yet. That's why we're here"
+        },
+        {
+          "role": "assistant",
+          "content": "I'm glad you're here now. You've both taken an important step.\n\nWhat you're describing — the stress, anxiety, withdrawal, and changes in eating — those are things that deserve proper professional support. I'd like to connect Alex with our counselling team at Stabilis, who specialise in helping young people navigate exactly this kind of struggle.\n\nA counsellor will call you back to have a fuller conversation and work out the best way forward for Alex. Does that sound okay?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, that sounds perfect. We'd really appreciate the support"
+        },
+        {
+          "role": "assistant",
+          "content": "That's wonderful. I'm so glad we can help.\n\nI just need a couple of details so our team can reach you.\n\nWhat's your first name?"
+        },
+        {
+          "role": "user",
+          "content": "Sarah"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, Sarah.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "555-0123"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect, Sarah. Thank you.\n\nJust to confirm — we'll have someone from Stabilis call you at 555-0123 to talk through Alex's situation and work out the best support plan for him. They'll be in touch as soon as possible.\n\nYou've both been really brave today. Alex, reaching out took courage. Sarah, you're doing exactly the right thing by being here with him.\n\nTake care of each other. 💚"
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": null,
+          "name": "Sarah",
+          "phone": "555-0123",
+          "crisis": false,
+          "urgency": "moderate",
+          "struggle": "stress, anxiety, withdrawal, poor sleep, not eating well",
+          "caller_type": "caring",
+          "medical_aid": null,
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": null,
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-08T06:30:39.577327+00:00",
+      "updated_at": "2026-07-08T06:54:46.952314+00:00"
+    },
+    {
+      "id": "032cb4f0-5930-4aad-ba6f-7772bc3abd61",
+      "session_id": "web_1783518620454_m9ftz6j",
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are you reaching out for?"
+        },
+        {
+          "role": "user",
+          "content": "myself"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for reaching out — that took courage.\n\nWhat's brought you to call today?"
+        },
+        {
+          "role": "user",
+          "content": "I've been drinking too much for the past year and I think I need help"
+        },
+        {
+          "role": "assistant",
+          "content": "I hear you. It sounds like you've been carrying this for a while, and I'm glad you reached out.\n\nCan you tell me a bit about what's been happening — what does drinking too much look like for you right now?"
+        },
+        {
+          "role": "user",
+          "content": "I drink a bottle of wine most nights, sometimes more. I've missed work twice because of hangovers"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for being honest with me. That's a lot to manage on your own, and it's clear this is affecting your life.\n\nHow long has it been like this — has it been the whole year, or did it get worse over time?"
+        },
+        {
+          "role": "user",
+          "content": "It got a lot worse in the last 3 months, since my divorce"
+        },
+        {
+          "role": "assistant",
+          "content": "I'm sorry you're going through that. Divorce is hard, and it sounds like the drinking has become a way to cope.\n\nAre you ready to get some help now, or are you still thinking about it?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, I'm ready. I don't want it to get worse"
+        },
+        {
+          "role": "assistant",
+          "content": "I'm really glad to hear that. You've made the right decision, and we can help you.\n\nJust to make sure we can reach you — what's your name?"
+        },
+        {
+          "role": "user",
+          "content": "James"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, James.\n\nAnd what's the best phone number to reach you on?"
+        },
+        {
+          "role": "user",
+          "content": "555-0199"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you, James. Just one more thing — which city or town are you in?"
+        },
+        {
+          "role": "user",
+          "content": "Cape Town"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for sharing all of that with me, James.\n\nJust to understand where you're at — when you say you're ready now, do you mean you'd like to come in for treatment soon, or are you still exploring your options?"
+        },
+        {
+          "role": "user",
+          "content": "I'd like to come in for treatment soon"
+        },
+        {
+          "role": "assistant",
+          "content": "That's really positive, James. I want to ask — do you have medical aid, or would you be paying privately?"
+        },
+        {
+          "role": "user",
+          "content": "I have medical aid through Discovery"
+        },
+        {
+          "role": "assistant",
+          "content": "That's good news — Discovery covers us in full, so that's one thing sorted.\n\nHave you been to treatment before, or would this be your first time?"
+        },
+        {
+          "role": "user",
+          "content": "This would be my first time"
+        },
+        {
+          "role": "assistant",
+          "content": "Okay, James. One last question — have you noticed any health issues related to your drinking, or anything else I should know about when our counsellor calls you?"
+        },
+        {
+          "role": "user",
+          "content": "Sometimes my hands shake in the mornings before I've had a drink"
+        },
+        {
+          "role": "assistant",
+          "content": "Thank you for telling me that, James. That's important information.\n\nYou've given me everything I need. Someone from Stabilis will call you at 555-0199 as soon as possible to discuss the best treatment plan for you. You've taken a brave step today, and we're here to support you through this.\n\nIs there anything else you'd like to know before we finish?"
+        },
+        {
+          "role": "user",
+          "content": "No, that's all. Thank you"
+        },
+        {
+          "role": "assistant",
+          "content": "You're welcome, James. Take care of yourself, and we'll be in touch very soon."
+        }
+      ],
+      "metadata": {
+        "phase": "close",
+        "leadData": {},
+        "triage_path": "clinical",
+        "collectedData": {
+          "city": "Cape Town",
+          "name": "James",
+          "phone": "555-0199",
+          "crisis": false,
+          "urgency": "soon",
+          "struggle": "alcohol - bottle of wine most nights, sometimes more, missing work, worsening over past 3 months since divorce",
+          "caller_type": "self",
+          "medical_aid": "Discovery",
+          "triage_path": "clinical",
+          "audit_c_tier": null,
+          "health_notes": "morning hand tremors before drinking",
+          "audit_c_score": null,
+          "guardian_name": null,
+          "invite_needed": false,
+          "guardian_phone": null,
+          "involves_minor": false,
+          "previous_treatment": false,
+          "conversation_complete": true
+        }
+      },
+      "created_at": "2026-07-08T13:50:26.656725+00:00",
+      "updated_at": "2026-07-08T14:13:32.241635+00:00"
+    }
+  ]
+}

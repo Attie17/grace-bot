@@ -1,0 +1,9 @@
+
+> stabilis-bot@1.1.0 start
+> node src/server.js
+
+[13:19:04.037] [32mINFO[39m (102700): [36mStabilis Intake Bot running on port 3002[39m
+[13:19:04.037] [32mINFO[39m (102700): [36mWidget: http://localhost:3002/widget/widget.html[39m
+[13:19:04.037] [32mINFO[39m (102700): [36mHealth: http://localhost:3002/health[39m
+[13:19:04.063] [32mINFO[39m (102700): [36mDaily summary scheduler started (17:00 SAST / 15:00 UTC)[39m
+[13:19:04.063] [32mINFO[39m (102700): [36mWeekly summary scheduler started (08:00 SAST / 06:00 UTC Monday)[39m
