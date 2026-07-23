@@ -16,6 +16,7 @@ import GRACE_SYSTEM_PROMPT from "../prompts/grace.system.js";
 import { extractFieldsFromConversation } from "./fieldExtractor.js";
 import { detectEscalation } from "./escalationDetector.js";
 import { analyzeSentimentTrajectory } from "./sentimentAnalyzer.js";
+import { buildGraceLeadPayload } from "./clinicalScoring.js";
 
 class GraceConversationEngine {
   constructor(supabaseClient, logger) {
@@ -186,12 +187,52 @@ class GraceConversationEngine {
     const extracted = await extractFieldsFromConversation(messages, this.client);
     const sentiment = await analyzeSentimentTrajectory(messages);
 
-    // Generate final summary response
+    const name = extracted.name?.value || null;
+    const phone = extracted.phone?.value || null;
+    const callerType = extracted.caller_type?.value || null;
+
+    let inviteUrl = null;
+
+    // Only attempt invite/lead creation if we have the minimum required data
+    if (name && phone) {
+      try {
+        const invite = await this.generateInviteLink(name, phone, callerType);
+        if (invite?.inviteUrl) {
+          inviteUrl = invite.inviteUrl;
+        }
+
+        // Fire the full lead payload to SJ — non-blocking, don't let a
+        // failure here stop the conversation from closing normally
+        const leadPayload = buildGraceLeadPayload(extracted, conversationId);
+        fetch(`${process.env.SJ_APP_URL}/api/webhooks/grace/lead`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-webhook-secret": process.env.GRACE_WEBHOOK_SECRET,
+          },
+          body: JSON.stringify(leadPayload),
+        }).then(async (res) => {
+          if (!res.ok) {
+            this.logger.error({ status: res.status, conversationId }, "SJ lead webhook returned error");
+          } else {
+            this.logger.info({ conversationId }, "SJ lead created successfully");
+          }
+        }).catch((err) => {
+          this.logger.error({ error: err.message, conversationId }, "SJ lead webhook call failed");
+        });
+      } catch (error) {
+        this.logger.error({ error: error.message, conversationId }, "Invite/lead creation failed, continuing without it");
+      }
+    } else {
+      this.logger.warn({ conversationId }, "Missing name or phone, skipping invite/lead creation");
+    }
+
+    // Generate final summary response — deliberately does NOT mention any
+    // URL, so Claude never has to generate or guess at one
     const summaryPrompt = `Based on this conversation, provide a brief, warm closing message (2-3 sentences). 
 Confirm next steps and include emergency numbers if appropriate.
-Use the caller's own language. Be warm and hopeful.`;
+Use the caller's own language. Be warm and hopeful. Do NOT include any links or URLs in your response.`;
 
-    // Make final Claude call
     const finalMessages = [
       ...messages.map((m) => ({
         role: m.role === "user" ? "user" : "assistant",
@@ -210,9 +251,14 @@ Use the caller's own language. Be warm and hopeful.`;
       messages: finalMessages,
     });
 
-    const closingMessage = response.content[0].text;
+    let closingMessage = response.content[0].text;
 
-    // Save conversation to database
+    // Append the real invite URL programmatically — never let the model
+    // generate or touch it, same safety principle used in ai-grace.js
+    if (inviteUrl) {
+      closingMessage += `\n\nYou can get started here:\n${inviteUrl}`;
+    }
+
     await this.saveConversation({
       id: conversationId,
       messages,
@@ -230,7 +276,57 @@ Use the caller's own language. Be warm and hopeful.`;
       escalationFlag: false,
       nextAction: "CREATE_LEAD",
       status: "completed",
+      inviteUrl,
     };
+  }
+
+  /**
+   * Generate invite link for the caller at SJ
+   * Ports ai-grace.js's generateInviteToken() logic, adapted to use the class logger
+   * and SJ's CallerType enum mapping already confirmed in clinicalScoring.js
+   */
+  async generateInviteLink(name, phone, callerTypeRaw) {
+    if (!process.env.SJ_APP_URL || !process.env.GRACE_WEBHOOK_SECRET) {
+      this.logger.error({ name, phone }, 'Cannot generate invite: missing SJ_APP_URL or GRACE_WEBHOOK_SECRET');
+      return null;
+    }
+
+    // Same mapping already confirmed and used in clinicalScoring.js's
+    // buildGraceLeadPayload() — SJ's CallerType enum: self | caring | professional
+    const callerTypeMap = {
+      adult_self: 'self',
+      myself_under_18: 'self',
+      family_under_18: 'caring',
+      professional: 'professional',
+    };
+    const callerType = callerTypeMap[callerTypeRaw] || 'self';
+
+    // SJ's invite route expects role as a SEPARATE, narrower field:
+    // only "deciding" | "caring" (confirmed against the real compiled route)
+    const role = callerType === 'caring' ? 'caring' : 'deciding';
+
+    try {
+      const response = await fetch(`${process.env.SJ_APP_URL}/api/invite/grace`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-secret': process.env.GRACE_WEBHOOK_SECRET,
+        },
+        body: JSON.stringify({ name, phone, role, source: 'grace', callerType }),
+      });
+
+      if (!response.ok) {
+        this.logger.error({ status: response.status, name, phone }, 'SJ invite API returned error');
+        return null;
+      }
+
+      const data = await response.json();
+      this.logger.info({ name, phone, inviteUrl: data.inviteUrl, patientId: data.patientId }, 'Invite generated successfully');
+      return { inviteUrl: data.inviteUrl, patientId: data.patientId, personId: data.personId };
+    } catch (error) {
+      this.logger.error({ error: error.message, name, phone }, 'Failed to call SJ invite API');
+      return null;
+    }
   }
 
   /**
