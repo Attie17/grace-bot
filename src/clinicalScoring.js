@@ -420,6 +420,8 @@ function buildGraceLeadPayload(extractedFields, graceLeadId) {
 
   const substancePrimary = unwrap(extractedFields.primary_substance);
 
+  const clinicalScores = calculateClinicalScores(extractedFields);
+
   return {
     grace_lead_id: graceLeadId,
     contact_name: unwrap(extractedFields.name),
@@ -440,6 +442,13 @@ function buildGraceLeadPayload(extractedFields, graceLeadId) {
     city: unwrap(extractedFields.city_town),
     substance_primary: substancePrimary,
     previous_treatment: unwrap(extractedFields.previous_treatment),
+    readiness_score: clinicalScores.readiness_score,
+    recommended_programme: clinicalScores.recommended_programme,
+    mental_health_suspected: clinicalScores.mental_health,
+    medical_flags: clinicalScores.medical_flags,
+    review_flags: clinicalScores.review_flags.length > 0
+      ? clinicalScores.review_flags.join(' | ')
+      : null,
     health_notes: null, // confirmed gap — no free-text health notes collected by new system
     mh_description: null, // same — no equivalent field exists
     caller_type: callerType,
