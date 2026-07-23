@@ -25,6 +25,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { detectCrisis, respondEmpathetically, getResponseWithCrisisDetection, generateOpeningAcknowledgement } from './claude-client.js';
 import { handleAIMessage } from './ai-grace.js';
+import { GraceConversationEngine } from './conversationEngine.js';
 import {
     buildOpeningPayload,
     getStagePayload,
@@ -32,7 +33,7 @@ import {
     buildClinicalBrief,
     FIRST_STAGE_ID
 } from './stages.js';
-import { saveConversation, loadConversation, createLead } from './database.js';
+import { saveConversation, loadConversation, createLead, getClient } from './database.js';
 import { notifyTherapist } from './handoff.js';
 import { handleWhatsAppMessage } from './whatsapp.js';
 import { logger } from './logger.js';
@@ -104,6 +105,61 @@ app.get('/privacy', (req, res) => {
 // Stage 1 opening — static text plus the next stage id the widget should request.
 app.get('/api/init', (req, res) => {
     res.json(buildOpeningPayload());
+});
+
+/**
+ * v2 message endpoint — routes to the new AI-driven conversation engine
+ * (conversationEngine.js). Entirely separate from /api/stage and /api/chat;
+ * does not touch the existing widget or GRACE_MODE='ai' path at all.
+ *
+ * Body: { sessionId, message }
+ * Loads existing v2 conversation history from grace_conversations (via
+ * the engine's own getConversationHistory), appends the new message,
+ * calls conductIntake(), returns the result.
+ */
+let graceEngine = null;
+function getGraceEngine() {
+  if (!graceEngine) {
+    graceEngine = new GraceConversationEngine(getClient(), logger);
+  }
+  return graceEngine;
+}
+
+app.post('/api/v2/message', chatLimiter, async (req, res) => {
+    const { sessionId, message } = req.body;
+    if (!sessionId || !message) {
+        return res.status(400).json({ error: 'Missing sessionId or message' });
+    }
+    if (message.length > 2000) {
+        return res.status(400).json({ error: 'Message too long' });
+    }
+
+    try {
+        const engine = getGraceEngine();
+        const existing = await engine.getConversationHistory(sessionId);
+        const messages = existing?.messages || [];
+
+        const updatedMessages = [
+            ...messages,
+            { role: 'user', content: message },
+        ];
+
+        const result = await engine.conductIntake(sessionId, updatedMessages, existing?.id);
+
+        res.json({
+            reply: result.graceResponse,
+            ended: result.status === 'completed',
+            escalationFlag: result.escalationFlag || false,
+            inviteUrl: result.inviteUrl || null,
+            sessionId,
+        });
+    } catch (error) {
+        logger.error({ error: error.message, sessionId }, 'v2 message error');
+        res.status(500).json({
+            error: 'Sorry, something went wrong. Please try again.',
+            saved: false,
+        });
+    }
 });
 
 /**
@@ -191,56 +247,62 @@ app.post('/api/stage', chatLimiter, async (req, res) => {
 
         const updatedMetadata = { ...metadata, leadData };
 
-        // Closing reached — respond now, then save lead and notify in background.
+        // Closing reached — capture invite URL and include in response
         if (result.ended && !metadata.lead_created) {
+            let responseMessages = [...(result.next.messages || [])];
+            let inviteUrl = null;
+
+            try {
+                const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
+                if (brief.contact_name && brief.contact_phone) {
+                    const leadId = await createLead(sessionId, brief);
+                    updatedMetadata.lead_created = true;
+                    updatedMetadata.lead_id = leadId;
+                    
+                    // Notify therapist and capture invite URL from SJ webhook
+                    // This is synchronous so we can include the URL in the closing message
+                    const sjResult = await notifyTherapist({
+                        sessionId,
+                        leadId,
+                        priority: leadData.urgent ? 'HIGH' : 'NORMAL',
+                        brief
+                    }).catch(err => {
+                        logger.warn({ error: err.message, leadId }, 'Therapist/SJ notification failed (non-blocking)');
+                        return { inviteUrl: null };
+                    });
+                    
+                    if (sjResult && sjResult.inviteUrl) {
+                        inviteUrl = sjResult.inviteUrl;
+                        updatedMetadata.sj_invite_url = inviteUrl;
+                        logger.info({ leadId, inviteUrl }, 'Invite URL captured from SJ webhook');
+                    }
+                    
+                    logger.info({ sessionId, leadId }, 'Lead qualified and therapist notified');
+                }
+            } catch (err) {
+                logger.error({ error: err.message, sessionId }, 'Lead creation or therapist notification failed');
+                // Continue anyway - don't block user
+            }
+
+            // Append invite URL to closing message if available
+            if (inviteUrl && responseMessages.length > 0) {
+                const lastMessage = responseMessages[responseMessages.length - 1];
+                if (typeof lastMessage === 'string') {
+                    responseMessages[responseMessages.length - 1] = lastMessage + `\n\n🔗 Join 'In the Meantime':\n${inviteUrl}`;
+                } else {
+                    responseMessages.push(`🔗 Join 'In the Meantime':\n${inviteUrl}`);
+                }
+            }
+
+            // Save conversation after lead creation and therapist notification
+            await saveConversation(sessionId, updatedMessages, updatedMetadata);
+
             res.json({
                 ack: result.ack,
-                next: result.next,
+                next: { ...result.next, messages: responseMessages },
                 ended: result.ended,
                 qualified: !!updatedMetadata.lead_created,
                 saved: true
-            });
-
-            setImmediate(async () => {
-                console.log('🚀 LEAD CREATION STARTING for session:', sessionId);
-                try {
-                    const brief = { ...buildClinicalBrief(leadData), ...(metadata.utm || {}) };
-                    console.log('📋 Brief built:', {
-                        contact_name: brief.contact_name,
-                        contact_phone: brief.contact_phone,
-                        contact_email: brief.contact_email
-                    });
-                    if (brief.contact_name && brief.contact_phone) {
-                        console.log('✅ Contact details present, creating lead...');
-                        const leadId = await createLead(sessionId, brief);
-                        console.log('💾 Lead created with ID:', leadId);
-                        await notifyTherapist({
-                            sessionId,
-                            leadId,
-                            priority: leadData.urgent ? 'HIGH' : 'NORMAL',
-                            brief
-                        });
-                        console.log('📧 Therapist notified');
-                        updatedMetadata.lead_created = true;
-                        updatedMetadata.lead_id = leadId;
-                        logger.info({ sessionId, leadId }, 'Lead qualified');
-                    } else {
-                        console.log('⚠️ SKIPPING LEAD: Missing contact details', {
-                            has_name: !!brief.contact_name,
-                            has_phone: !!brief.contact_phone
-                        });
-                        logger.warn({ sessionId }, 'Closing without contact details — skipping lead creation');
-                    }
-                    console.log('💾 Saving conversation to DB...');
-                    await saveConversation(sessionId, updatedMessages, updatedMetadata);
-                    console.log('✅ LEAD CREATION COMPLETE for session:', sessionId);
-                } catch (err) {
-                    console.error('❌ LEAD CREATION FAILED:', err);
-                    console.error('Session:', sessionId);
-                    console.error('Lead data:', JSON.stringify(leadData, null, 2));
-                    console.error('Updated metadata:', JSON.stringify(updatedMetadata, null, 2));
-                    logger.error({ error: err.message, sessionId }, 'Background lead save failed');
-                }
             });
         } else {
             // Non-closing stages: persist BEFORE responding so the next request

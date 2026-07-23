@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 
 let supabase = null;
 
-function getClient() {
+export function getClient() {
     if (!supabase) {
         if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY ||
             process.env.SUPABASE_URL.includes('xxxxx')) {

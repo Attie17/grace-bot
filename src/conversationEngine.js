@@ -79,7 +79,8 @@ class GraceConversationEngine {
 
         const wrappedUp = await this.wrapUpConversation(
           messages,
-          conversationId
+          conversationId,
+          callerId
         );
         return wrappedUp;
       }
@@ -90,6 +91,21 @@ class GraceConversationEngine {
       // Extract fields from full conversation so far
       const extracted = await extractFieldsFromConversation(messages, this.client);
       const sentiment = await analyzeSentimentTrajectory(messages);
+
+      // Append Grace's response to the message history and persist
+      // This ensures subsequent turns can load the full conversation context
+      const updatedMessages = [
+        ...messages,
+        { role: 'assistant', content: graceResponse },
+      ];
+
+      await this.saveConversation({
+        id: conversationId,
+        messages: updatedMessages,
+        extractedFields: extracted,
+        sentimentTrajectory: sentiment,
+        status: 'in_progress',
+      }, callerId);
 
       // Prepare return
       const result = {
@@ -183,7 +199,7 @@ class GraceConversationEngine {
   /**
    * Wrap up conversation after max exchanges
    */
-  async wrapUpConversation(messages, conversationId) {
+  async wrapUpConversation(messages, conversationId, callerId) {
     const extracted = await extractFieldsFromConversation(messages, this.client);
     const sentiment = await analyzeSentimentTrajectory(messages);
 
@@ -266,7 +282,7 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
       sentimentTrajectory: sentiment,
       status: "completed",
       closingMessage,
-    });
+    }, callerId);
 
     return {
       conversationId,
@@ -333,7 +349,7 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
    * Save conversation to Supabase
    * FIX #3: Improved validation and error handling
    */
-  async saveConversation(data) {
+  async saveConversation(data, callerId) {
     try {
       // Validate input data before saving
       if (!data.messages || !Array.isArray(data.messages)) {
@@ -347,6 +363,7 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
       // Prepare payload with defensive defaults
       const payload = {
         id: data.id,
+        caller_id: callerId,
         messages: data.messages,
         extracted_fields: data.extractedFields || {},
         sentiment_trajectory: data.sentimentTrajectory || 'unknown',
@@ -358,7 +375,8 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
 
       const { data: saved, error } = await this.supabase
         .from("grace_conversations")
-        .insert([payload]);
+        .upsert([payload], { onConflict: 'id' })
+        .select();
 
       if (error) {
         this.logger.error(
@@ -373,7 +391,7 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
         "Conversation saved successfully"
       );
 
-      return saved[0];
+      return saved?.[0] || null;
     } catch (error) {
       this.logger.error(
         { conversationId: data.id, error: error.message },
