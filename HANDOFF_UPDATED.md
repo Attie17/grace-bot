@@ -601,6 +601,21 @@ consolidating architecture-level decisions to a single chat thread over
 letting parallel/sequential sessions each reach and assert independent
 conclusions.
 
+**Third new observation** (added after a real near-miss): downloaded
+handoff-doc files accumulate numbered duplicates in a browser's Downloads
+folder (`HANDOFF_UPDATED.md`, `HANDOFF_UPDATED (1).md`, `(2).md`, etc.)
+across a long session. Copying by typed filename risks silently grabbing
+a stale, much-earlier version — this happened once, overwriting real
+session content with a version from hours earlier, only caught by
+checking the git diff stat after committing (a large deletion count on
+what should have been an addition was the tell). Going forward: before
+copying any handoff doc from Downloads, run `Get-ChildItem` on the
+filename pattern first, identify the correct file by `LastWriteTime`
+(the true most recent one), and verify a few days'/session's worth of
+distinctive new content is present via `Select-String` before
+committing — not just after. If a bad commit does happen, `git commit
+--amend` cleanly replaces it rather than leaving broken history in place.
+
 ---
 *This document supersedes "UPDATED HANDOFF FOR NEW CHAT" from the same
 build session. Prepared after ESM conversion, real import verification, and
