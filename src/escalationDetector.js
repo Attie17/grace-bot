@@ -76,11 +76,11 @@ function detectEscalation(message) {
  */
 function checkSuicideRisk(text) {
   // Critical keywords
-  const criticalWords = [
-    "suicide",
-    "kill myself",
-    "end my life",
-    "no reason to live",
+  const criticalPatterns = [
+    /suicide|suicidal/,
+    /kill\s+my?self/,
+    /end(?:ing)?\s+my\s+life/,
+    /no\s+reason\s+to\s+live/,
   ];
 
   // Context words that strengthen
@@ -96,8 +96,8 @@ function checkSuicideRisk(text) {
   const negationWords = ["not", "never", "wouldn't", "don't"];
 
   // Check for critical keywords
-  let hasCritical = criticalWords.some((word) =>
-    text.includes(word)
+  let hasCritical = criticalPatterns.some((pattern) =>
+    pattern.test(text)
   );
 
   // Check for context strengthening

@@ -34,9 +34,11 @@ const emailTransporter = nodemailer.createTransport({
 
 /**
  * Notify therapist of a new lead.
+ * Returns invite URL from SJ webhook if available.
  */
 export async function notifyTherapist({ sessionId, leadId, priority, brief, type, lastMessage }) {
     const isCrisis = priority === 'CRISIS';
+    let sjWebhookResult = null;
 
     try {
         // Always notify reception via WhatsApp for every completed lead
@@ -65,18 +67,23 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             await sendCrisisEmail({ sessionId, type, lastMessage });
         }
 
-        // Notify Sobriety Journey of new admission (background, non-blocking)
+        // Notify Sobriety Journey of new admission (capture result for invite URL)
         if (brief && leadId) {
-            notifySobrietyJourney(brief, leadId).catch(err => {
+            sjWebhookResult = await notifySobrietyJourney(brief, leadId).catch(err => {
                 logger.warn({ error: err.message, leadId }, 'SJ webhook notification failed (non-blocking)');
+                return null;
             });
         }
 
         logger.info({ leadId, priority }, 'Therapist notified (email sent)');
 
+        // Return invite URL if available
+        return { inviteUrl: sjWebhookResult?.inviteUrl || null };
+
     } catch (error) {
         logger.error({ error: error.message, leadId }, 'Failed to notify therapist - email not sent');
         // Don't throw - conversation should continue even if alert fails
+        return { inviteUrl: null };
     }
 }
 
@@ -416,38 +423,72 @@ async function sendCrisisEmail({ sessionId, type, lastMessage }) {
 }
 
 /**
- * Notify Sobriety Journey of new admission.
- * Posts the full clinical brief to SJ webhook endpoint for their intake system.
+ * Notify Sobriety Journey of new Grace intake
+ * Creates patient account + generates invite URL
  * Non-blocking — failures logged but don't affect Grace Bot flow.
  */
 async function notifySobrietyJourney(brief, leadId) {
     const endpoint = process.env.SJ_WEBHOOK_URL;
     const secret = process.env.SJ_WEBHOOK_SECRET;
-    
+
     if (!endpoint) {
-        logger.warn('SJ_WEBHOOK_URL not set — skipping SJ notification');
-        return;
+        logger.warn({ leadId }, 'SJ_WEBHOOK_URL not set — skipping SJ notification');
+        return null;
     }
-    
+
     try {
+        // Build payload for SJ webhook
+        const payload = {
+            name: brief.contact_name || 'Unknown',
+            phone: brief.contact_phone || '',
+            email: brief.contact_email || '',
+            role: brief.who_for === 'someone_else' ? 'caring' : 'deciding',
+            source: 'grace',
+            callerType: brief.caller_type || 'myself'
+        };
+
+        logger.info(
+            { leadId, endpoint },
+            'Calling SJ webhook to create patient account'
+        );
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-webhook-secret': secret || ''
             },
-            body: JSON.stringify({
-                grace_lead_id: leadId,
-                ...brief
-            })
+            body: JSON.stringify(payload),
+            timeout: 5000
         });
-        
+
         if (!response.ok) {
-            logger.warn({ status: response.status }, 'SJ webhook responded with error');
-        } else {
-            logger.info({ leadId }, 'SJ webhook notified successfully');
+            const errorText = await response.text();
+            logger.error(
+                { leadId, status: response.status, error: errorText },
+                'SJ webhook returned error'
+            );
+            return null;
         }
-    } catch (err) {
-        logger.warn({ error: err.message }, 'SJ webhook failed (non-blocking)');
+
+        const result = await response.json();
+        
+        logger.info(
+            { leadId, patientId: result.patientId, inviteUrl: result.inviteUrl },
+            'SJ webhook success — patient account created'
+        );
+
+        return {
+            inviteUrl: result.inviteUrl,
+            patientId: result.patientId,
+            success: true
+        };
+
+    } catch (error) {
+        logger.error(
+            { leadId, error: error.message },
+            'SJ webhook call failed'
+        );
+        return null;
     }
 }
