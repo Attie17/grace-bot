@@ -597,18 +597,17 @@ function renderStage(payload) {
     }
 }
 
-async function submitChoice(option) {
-    if (!currentStage) return;
+async function submitV2Button(label) {
     clearButtons();
-    const userMsg = addMessage(option.label, 'user');
+    const userMsg = addMessage(label, 'user');
     setTextInput(false);
     addTyping();
 
     try {
-        const data = await postStage(currentStage.stageId, option.value);
+        const data = await postV2Message(label);
         removeTyping();
         if (data?.saved) markSaved(userMsg);
-        renderResponse(data);
+        renderV2Response(data);
     } catch (err) {
         removeTyping();
         addMessage('Connection error. Please try again or WhatsApp us directly.', 'system');
@@ -618,7 +617,7 @@ async function submitChoice(option) {
 
 async function submitText() {
     const text = input.value.trim();
-    if (!text || !currentStage || currentStage.inputType !== 'text') return;
+    if (!text) return;
 
     clearButtons();
     const userMsg = addMessage(text, 'user');
@@ -628,12 +627,10 @@ async function submitText() {
     addTyping();
 
     try {
-        const data = currentStage.useAI
-            ? await postChat(currentStage.stageId, text)
-            : await postStage(currentStage.stageId, text);
+        const data = await postV2Message(text);
         removeTyping();
         if (data?.saved) markSaved(userMsg);
-        renderResponse(data);
+        renderV2Response(data);
     } catch (err) {
         removeTyping();
         addMessage('Connection error. Please try again or WhatsApp us directly.', 'system');
@@ -702,6 +699,59 @@ function renderResponse(data) {
     renderStage(data.next);
 }
 
+function renderV2Buttons(options) {
+    clearButtons();
+    const group = document.createElement('div');
+    group.className = 'btn-group';
+    options.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = label;
+        btn.addEventListener('click', () => submitV2Button(label));
+        group.appendChild(btn);
+    });
+    chat.appendChild(group);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function renderV2Response(data) {
+    if (!data) return;
+
+    // Show crisis card if escalated
+    if (data.escalationFlag) {
+        addCrisisCard();
+    }
+
+    // Show Grace's reply (includes invite URL if ended)
+    if (data.reply) {
+        addMessage(data.reply, 'bot');
+    }
+
+    // Show end screen if conversation ended
+    if (data.ended) {
+        showEndScreen();
+        return;
+    }
+
+    // Show buttons or text input based on response
+    if (data.buttons && data.buttons.length > 0) {
+        setTextInput(false, 'Choose an option…');
+        renderV2Buttons(data.buttons);
+    } else {
+        setTextInput(true, 'Type your message…');
+    }
+}
+
+async function postV2Message(message) {
+    const response = await fetch('/api/v2/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, message })
+    });
+    return response.json();
+}
+
+// Legacy functions kept for compatibility (no longer used)
 async function postStage(stageId, value) {
     const response = await fetch('/api/stage', {
         method: 'POST',
@@ -727,13 +777,8 @@ async function bootstrap() {
         const init = await initRes.json();
         (init.messages || []).forEach(msg => addMessage(msg, 'bot'));
 
-        const stageRes = await fetch('/api/stage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId, utm: readUtm() })
-        });
-        const data = await stageRes.json();
-        renderStage(data.next);
+        // Enable text input for user to start conversation via /api/v2/message
+        setTextInput(true, 'Type your message…');
     } catch (err) {
         console.error('Failed to start conversation:', err);
         addMessage('Connection error. Please refresh, or WhatsApp us directly.', 'system');
