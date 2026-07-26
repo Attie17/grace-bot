@@ -1,27 +1,37 @@
 /**
- * WhatsApp Business API Integration
+ * WhatsApp Business API Integration — REWRITTEN
  * 
- * Uses Twilio as the WhatsApp provider (easiest for SA market).
- * For production scale, consider 360dialog or direct Meta integration.
+ * Routes incoming WhatsApp messages through conversationEngine.js
+ * (AI-driven, MI-informed, trauma-aware intake) instead of the old
+ * scripted stage engine.
+ * 
+ * Model: claude-haiku-4-5-20251001 (set in conversationEngine.js)
  * 
  * Webhook flow:
- * 1. User messages your WhatsApp number
+ * 1. Caller messages the WhatsApp number (via social media ad button)
  * 2. Twilio POSTs to /api/whatsapp/webhook
- * 3. We look up session by phone number
- * 4. Route through same conversation engine as web widget
- * 5. Send response back via Twilio
+ * 3. We look up conversation history by phone number
+ * 4. Route through conductIntake() in conversationEngine.js
+ * 5. Send Grace's response back via Twilio
+ * 6. Notify receptionist on escalation or lead creation
+ * 
+ * Previous version used advanceWhatsAppStage() from whatsapp-stages.js
+ * and detectCrisis() from claude-client.js — both retired in this rewrite.
  */
 
 import twilio from 'twilio';
-import { chat, detectCrisis } from './claude-client.js';
-import { loadConversation, saveConversation, createLead } from './database.js';
+import { getClient } from './database.js';
+import { GraceConversationEngine } from './conversationEngine.js';
 import { notifyTherapist } from './handoff.js';
 import { logger } from './logger.js';
-import { getWhatsAppInitialStage, advanceWhatsAppStage, formatStageForWhatsApp } from './whatsapp-stages.js';
 
 const twilioClient = process.env.TWILIO_ACCOUNT_SID
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     : null;
+
+// Initialize conversation engine (single instance, reused across requests)
+// Uses shared Supabase client from database.js — no duplicate connections
+const engine = new GraceConversationEngine(getClient(), logger);
 
 /**
  * Handle incoming WhatsApp message from Twilio webhook.
@@ -35,180 +45,66 @@ export async function handleWhatsAppMessage(body) {
         return;
     }
 
-    // Use phone number as session ID (stable across conversation)
-    const sessionId = `wa_${From.replace('whatsapp:', '')}`;
+    // Use phone number as caller ID (stable across conversation)
+    const callerId = `wa_${From.replace('whatsapp:', '')}`;
 
     logger.info({ from: From, preview: Body.substring(0, 50) }, 'WhatsApp message received');
 
     try {
-        // Crisis detection runs first for fast response
-        logger.debug({ sessionId }, 'Starting crisis detection');
-        const crisis = await detectCrisis(Body);
-        logger.debug({ sessionId, crisis }, 'Crisis detection completed');
-        
-        if (crisis.crisis && crisis.confidence > 0.9) {
-            const crisisResponses = {
-                overdose: `This sounds like a medical emergency. Please call for help immediately:\n\n📞 Emergency: 112 or 10177\n📞 Poison Centre: 0861 555 777\n\nStay on the line with them. A member of our team has been alerted.`,
-                withdrawal: `What you're describing sounds medically serious. Please get to an emergency room or call:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`,
-                violence: `I'm concerned about your safety right now. Please call for immediate help:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`,
-                medical: `This sounds like a medical emergency. Please call:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`
-            };
-            const crisisResponse = crisisResponses[crisis.type] || `It sounds like you may need immediate help. Please call:\n\n📞 Emergency: 112 or 10177\n\nA member of our team has been alerted.`;
+        // Load existing conversation (if any)
+        const existing = await engine.getConversationHistory(callerId);
 
-            await sendWhatsApp(From, crisisResponse);
+        let messages;
+        let conversationId = null;
+
+        if (existing && existing.status !== 'completed') {
+            // Continuing an active conversation — append new message to history
+            messages = [...existing.messages, { role: 'user', content: Body }];
+            conversationId = existing.id;
+            logger.debug({ callerId, conversationId, messageCount: messages.length }, 'Continuing conversation');
+        } else {
+            // First message or previous conversation already completed — start fresh
+            messages = [{ role: 'user', content: Body }];
+            logger.debug({ callerId }, 'Starting new conversation');
+        }
+
+        // conductIntake() handles everything:
+        // - Escalation detection (detectEscalation from escalationDetector.js)
+        // - AI response generation (Claude Haiku)
+        // - Field extraction (fieldExtractor.js)
+        // - Sentiment analysis
+        // - Conversation state persistence (grace_conversations table)
+        // - Wrap-up: invite link generation + SJ lead webhook
+        const result = await engine.conductIntake(callerId, messages, conversationId);
+
+        // Send Grace's response via WhatsApp
+        await sendWhatsApp(From, result.graceResponse);
+
+        // Escalation — notify receptionist immediately
+        if (result.escalationFlag) {
+            logger.warn({ callerId, reason: result.escalationReason }, 'Escalation triggered — notifying receptionist');
             await notifyTherapist({
-                sessionId,
+                sessionId: callerId,
                 priority: 'CRISIS',
-                type: crisis.type,
+                type: result.escalationReason,
                 lastMessage: Body
             });
-
-            return;
         }
 
-        // Load conversation history
-        logger.debug({ sessionId }, 'Loading conversation history');
-        const conversation = await loadConversation(sessionId);
-        const existingMetadata = conversation?.metadata || {};
-        const messages = conversation?.messages || [];
-        logger.debug({ sessionId, messageCount: messages.length }, 'Conversation loaded');
-
-        // First-time user? Send warm welcome + start intake flow
-        if (messages.length === 0) {
-            const welcome = `Hello${ProfileName ? ` ${ProfileName}` : ''} 👋
-
-Thank you for reaching out to Stabilis Treatment Centre. You've taken a brave step, and we're here to help.
-
-I'm Grace, the first point of contact. I'll ask a few quick questions so our clinical team can call you back with real information about how we can help.
-
-Everything you share is confidential. 💙`;
-
-            logger.debug({ sessionId }, 'Sending welcome message');
-            await sendWhatsApp(From, welcome);
-            
-            // Send first stage
-            const initialStage = getWhatsAppInitialStage();
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            await sendWhatsApp(From, initialStage.formattedMessage);
-
-            // Save conversation with stage tracking
-            await saveConversation(sessionId, [], {
-                ...existingMetadata,
-                channel: 'whatsapp',
-                phone: From,
-                profile_name: ProfileName,
-                currentStage: initialStage.stageId,
-                leadData: {}
+        // Lead created (conversation complete) — notify receptionist + send invite to caller
+        if (result.nextAction === 'CREATE_LEAD') {
+            const urgency = result.extractedFields?.urgency_level?.value;
+            logger.info({ callerId, urgency }, 'Lead created — notifying receptionist');
+            const { inviteUrl } = await notifyTherapist({
+                sessionId: callerId,
+                priority: urgency === 'crisis' || urgency === 'immediate' ? 'HIGH' : 'NORMAL',
+                brief: result.extractedFields
             });
-            return;
-        }
-
-        // User is responding during intake flow
-        let responseText = null;
-        let shouldContinueIntake = false;
-        let nextStageId = null;
-        let updatedLeadData = existingMetadata.leadData || {};
-
-        if (existingMetadata.currentStage && !existingMetadata.lead_created) {
-            // Advance through intake stage
-            logger.debug({ sessionId, currentStage: existingMetadata.currentStage }, 'Advancing stage');
-            
-            try {
-                const stageResult = advanceWhatsAppStage(
-                    existingMetadata.currentStage,
-                    Body,
-                    updatedLeadData
+            // Send invite URL to caller via WhatsApp if available
+            if (inviteUrl) {
+                await sendWhatsApp(From,
+                    `Your personal link to get started on Sobriety Journey:\n\n${inviteUrl}\n\nThis link is valid for 30 days. Tap it to create your account. 💙`
                 );
-
-                if (stageResult.error) {
-                    // Invalid input (e.g., wrong number), ask again
-                    responseText = stageResult.error;
-                    nextStageId = stageResult.stageId;
-                    shouldContinueIntake = true;
-                } else {
-                    // Valid stage advance
-                    responseText = stageResult.formattedMessage;
-                    nextStageId = stageResult.nextStageId;
-                    updatedLeadData = stageResult.leadData;
-                    shouldContinueIntake = !stageResult.ended;
-
-                    // Include acknowledgements
-                    if (stageResult.ack && stageResult.ack.length > 0) {
-                        responseText = stageResult.ack.join('\n\n') + '\n\n' + responseText;
-                    }
-                }
-            } catch (error) {
-                logger.error({ error: error.message, sessionId }, 'Stage advance failed');
-                // Fall back to AI chat on error
-                shouldContinueIntake = false;
-            }
-        }
-
-        // If not in intake or intake ended, use AI chat
-        if (!shouldContinueIntake && !responseText) {
-            logger.debug({ sessionId }, 'Starting chat');
-            const { text, clinicalBrief } = await chat(messages, Body);
-            logger.debug({ sessionId, textLength: text?.length }, 'Chat completed');
-            responseText = text;
-
-            // Check if conversation should end based on clinical brief
-            if (clinicalBrief?.conversation_complete) {
-                shouldContinueIntake = false;
-            }
-        }
-
-        // Save conversation with updated stage tracking
-        const updatedMessages = [
-            ...messages,
-            { role: 'user', content: Body },
-            { role: 'assistant', content: responseText }
-        ];
-
-        const updatedMetadata = {
-            ...existingMetadata,
-            channel: 'whatsapp',
-            phone: From,
-            profile_name: ProfileName,
-            leadData: updatedLeadData
-        };
-
-        if (shouldContinueIntake && nextStageId) {
-            updatedMetadata.currentStage = nextStageId;
-        } else if (!shouldContinueIntake) {
-            delete updatedMetadata.currentStage;
-        }
-
-        await saveConversation(sessionId, updatedMessages, updatedMetadata);
-
-        // Send response
-        logger.debug({ sessionId }, 'Sending response');
-        await sendWhatsApp(From, responseText);
-
-        // If intake ended and qualified, create lead + notify therapist
-        if (!shouldContinueIntake && updatedLeadData && Object.keys(updatedLeadData).length > 2 && !existingMetadata.lead_created) {
-            try {
-                // Construct clinical brief from leadData
-                const enrichedBrief = {
-                    ...updatedLeadData,
-                    contact_phone: updatedLeadData.contact_phone || From.replace('whatsapp:', ''),
-                    intake_complete: true
-                };
-
-                const leadId = await createLead(sessionId, enrichedBrief);
-                await notifyTherapist({
-                    sessionId,
-                    leadId,
-                    priority: updatedLeadData.urgent === 'urgent' ? 'HIGH' : 'NORMAL',
-                    brief: enrichedBrief
-                });
-
-                await saveConversation(sessionId, updatedMessages, {
-                    ...updatedMetadata,
-                    lead_created: true,
-                    lead_id: leadId
-                });
-            } catch (error) {
-                logger.error({ error: error.message, sessionId }, 'Lead creation failed');
             }
         }
 
