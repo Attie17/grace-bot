@@ -4,7 +4,7 @@
  * Orchestrates the full intake conversation flow.
  * Handles:
  * - Message history
- * - Claude Sonnet API calls
+ * - Claude Haiku API calls (claude-haiku-4-5-20251001)
  * - Field extraction
  * - Escalation detection
  * - Database persistence
@@ -23,7 +23,7 @@ class GraceConversationEngine {
     this.client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
-    this.model = "claude-sonnet-4-6";
+    this.model = "claude-haiku-4-5-20251001";
     this.systemPrompt = GRACE_SYSTEM_PROMPT;
     this.supabase = supabaseClient;
     this.logger = logger;
