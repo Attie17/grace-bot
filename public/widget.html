@@ -773,11 +773,8 @@ async function postChat(stageId, message) {
 async function bootstrap() {
     setTextInput(false);
     try {
-        const initRes = await fetch('/api/init');
-        const init = await initRes.json();
-        (init.messages || []).forEach(msg => addMessage(msg, 'bot'));
-
-        // Enable text input for user to start conversation via /api/v2/message
+        await fetch('/api/init'); // session setup only
+        addMessage("Hi 👋 I'm Grace. What's brought you here today?", 'bot');
         setTextInput(true, 'Type your message…');
     } catch (err) {
         console.error('Failed to start conversation:', err);
