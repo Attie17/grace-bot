@@ -94,18 +94,15 @@ export async function handleWhatsAppMessage(body) {
         // Lead created (conversation complete) — notify receptionist + send invite to caller
         if (result.nextAction === 'CREATE_LEAD') {
             const urgency = result.extractedFields?.urgency_level?.value;
-            logger.info({ callerId, urgency }, 'Lead created — notifying receptionist');
-            const { inviteUrl } = await notifyTherapist({
+            const inviteUrl = result.inviteUrl || null;
+            logger.info({ callerId, urgency, inviteUrl }, 'Lead created — notifying receptionist');
+
+            // Notify receptionist (non-blocking — do not await)
+            notifyTherapist({
                 sessionId: callerId,
                 priority: urgency === 'crisis' || urgency === 'immediate' ? 'HIGH' : 'NORMAL',
                 brief: result.extractedFields
-            });
-            // Send invite URL to caller via WhatsApp if available
-            if (inviteUrl) {
-                await sendWhatsApp(From,
-                    `Your personal link to get started on Sobriety Journey:\n\n${inviteUrl}\n\nThis link is valid for 30 days. Tap it to create your account. 💙`
-                );
-            }
+            }).catch(err => logger.error({ error: err.message, callerId }, 'notifyTherapist failed'));
         }
 
     } catch (error) {
@@ -145,3 +142,4 @@ export async function sendOutboundWhatsApp(phoneNumber, message) {
     
     return sendWhatsApp(to, message);
 }
+

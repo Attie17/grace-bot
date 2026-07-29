@@ -104,7 +104,10 @@ app.get('/privacy', (req, res) => {
 
 // Stage 1 opening — static text plus the next stage id the widget should request.
 app.get('/api/init', (req, res) => {
-    res.json(buildOpeningPayload());
+    // Return a neutral ready signal only — no greeting text.
+    // The greeting is handled by Claude on the first /api/v2/message call
+    // (Section A of grace.system.js). Returning text here caused a double greeting.
+    res.json({ ready: true });
 });
 
 /**
@@ -137,6 +140,17 @@ app.post('/api/v2/message', chatLimiter, async (req, res) => {
     try {
         const engine = getGraceEngine();
         const existing = await engine.getConversationHistory(sessionId);
+        if (existing?.status === 'completed') {
+            // Previous conversation completed — start fresh rather than re-triggering wrap-up
+            logger.info({ sessionId }, 'Previous conversation completed — starting fresh session');
+            return res.json({
+                reply: "Hi, I'm Grace. It looks like we've spoken before. Would you like to start a new conversation?",
+                ended: false,
+                escalationFlag: false,
+                inviteUrl: null,
+                sessionId,
+            });
+        }
         const messages = existing?.messages || [];
 
         const updatedMessages = [
@@ -495,3 +509,6 @@ app.listen(PORT, () => {
     logger.info(`Health: http://localhost:${PORT}/health`);
     startScheduler();
 });
+
+
+

@@ -82,7 +82,7 @@ function extractName(messages) {
     "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
   ]);
 
-  for (let i = messages.length - 1; i >= Math.max(0, messages.length - 6); i--) {
+  for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
     if (msg.role === "user") {
       const patterns = [
@@ -120,7 +120,7 @@ function extractName(messages) {
  * FIX #13: Search most recent messages first
  */
 function extractPhone(messages) {
-  const searchMessages = messages.slice(-5).reverse();
+  const searchMessages = [...messages].reverse();
 
   for (const msg of searchMessages) {
     if (msg.role === "user") {
