@@ -70,7 +70,9 @@ class GraceConversationEngine {
         }
       }
 
-      // Check if conversation is complete (15+ exchanges = ~12 min)
+      // Check if conversation is complete
+      // Primary trigger: we have name + phone + at least 10 messages
+      // Safety net: max exchanges reached regardless of data
       if (messages.length >= this.maxExchanges) {
         this.logger.info(
           { conversationId, exchanges: messages.length },
@@ -83,6 +85,26 @@ class GraceConversationEngine {
           callerId
         );
         return wrappedUp;
+      }
+
+      // Early wrap-up: if we have minimum required data, wrap up naturally
+      // This fires as soon as Grace has name + phone + basic conversation
+      // rather than waiting for maxExchanges
+      if (messages.length >= 10) {
+        const earlyCheck = await extractFieldsFromConversation(messages, this.client);
+        const hasMinimumData = earlyCheck.name?.value && earlyCheck.phone?.value;
+        if (hasMinimumData) {
+          this.logger.info(
+            { conversationId, exchanges: messages.length, name: earlyCheck.name.value },
+            "Minimum data captured, wrapping up early"
+          );
+          const wrappedUp = await this.wrapUpConversation(
+            messages,
+            conversationId,
+            callerId
+          );
+          return wrappedUp;
+        }
       }
 
       // Generate Grace response
@@ -272,7 +294,7 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
     // Append the real invite URL programmatically — never let the model
     // generate or touch it, same safety principle used in ai-grace.js
     if (inviteUrl) {
-      closingMessage += `\n\nYou can get started here:\n${inviteUrl}`;
+      closingMessage += `\n\nIf you follow this link you can sign in (for free) to a page where we can assist you in these times. Please click here:\n${inviteUrl}`;
     }
 
     await this.saveConversation({
