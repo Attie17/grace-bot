@@ -27,7 +27,7 @@ class GraceConversationEngine {
     this.systemPrompt = GRACE_SYSTEM_PROMPT;
     this.supabase = supabaseClient;
     this.logger = logger;
-    this.maxExchanges = 20; // ~12-15 min conversation
+    this.maxExchanges = 30; // ~15-20 min conversation
     this.responseTimeoutMs = 30000; // 30s timeout for Claude
   }
 

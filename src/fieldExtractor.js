@@ -86,7 +86,7 @@ function extractName(messages) {
     const msg = messages[i];
     if (msg.role === "user") {
       const patterns = [
-        /(?:my\s+name\s+is|I'm|I am|call\s+me|it'?s?|just\s+call\s+me)\s+([A-Z][a-zA-Z]+)/i,
+        /(?:my\s+name\s+is|I'm|I am|call\s+me|just\s+call\s+me)\s+([A-Z][a-zA-Z]+)/i,
         /^([A-Z][a-zA-Z]+)\s+(?:here|speaking)/i,
       ];
 
