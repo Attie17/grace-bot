@@ -122,19 +122,39 @@ describe("Grace Conversation Engine", () => {
     });
 
     it("should extract phone number with spaces (formatted SA number)", async () => {
-      const messages = [
-        { role: "user", content: "072 456 7890" },
-      ];
+      const messages = [{ role: "user", content: "072 456 7890" }];
       const extracted = await extractFieldsFromConversation(messages);
       expect(extracted.phone?.value).toBe("0724567890");
     });
 
     it("should extract phone number with dashes", async () => {
-      const messages = [
-        { role: "user", content: "You can reach me on 083-999-1234" },
-      ];
+      const messages = [{ role: "user", content: "You can reach me on 083-999-1234" }];
       const extracted = await extractFieldsFromConversation(messages);
       expect(extracted.phone?.value).toBe("0839991234");
+    });
+
+    it("should extract phone number with parentheses", async () => {
+      const messages = [{ role: "user", content: "(072) 123-4567" }];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.phone?.value).toBe("0721234567");
+    });
+
+    it("should extract international +27 with spaces", async () => {
+      const messages = [{ role: "user", content: "+27 72 123 4567" }];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.phone?.value).toBe("0721234567");
+    });
+
+    it("should extract international 27 without + prefix", async () => {
+      const messages = [{ role: "user", content: "27821234567" }];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.phone?.value).toBe("0821234567");
+    });
+
+    it("should extract phone from a natural sentence with context keyword", async () => {
+      const messages = [{ role: "user", content: "My number is 076 543 2100, call me anytime" }];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.phone?.value).toBe("0765432100");
     });
 
     it("should extract bare name reply after Grace asks for name", async () => {
@@ -144,6 +164,15 @@ describe("Grace Conversation Engine", () => {
       ];
       const extracted = await extractFieldsFromConversation(messages);
       expect(extracted.name?.value).toBe("Maria");
+    });
+
+    it("should extract bare name (lowercase) after Grace asks, and capitalise it", async () => {
+      const messages = [
+        { role: "assistant", content: "May I ask what to call you?" },
+        { role: "user", content: "peter" },
+      ];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.name?.value).toBe("Peter");
     });
 
     it("should NOT extract stopword as bare name reply after name question", async () => {

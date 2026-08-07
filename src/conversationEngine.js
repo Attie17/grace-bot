@@ -17,6 +17,7 @@ import { extractFieldsFromConversation } from "./fieldExtractor.js";
 import { detectEscalation } from "./escalationDetector.js";
 import { analyzeSentimentTrajectory } from "./sentimentAnalyzer.js";
 import { buildGraceLeadPayload } from "./clinicalScoring.js";
+import { notifyTherapist } from "./handoff.js";
 
 class GraceConversationEngine {
   constructor(supabaseClient, logger) {
@@ -262,7 +263,36 @@ class GraceConversationEngine {
         this.logger.error({ error: error.message, conversationId }, "Invite/lead creation failed, continuing without it");
       }
     } else {
-      this.logger.warn({ conversationId }, "Missing name or phone, skipping invite/lead creation");
+      // Extraction failed even after a full conversation — caller is real and got this far.
+      // Fire a manual-review alert so the counsellor can act on whatever partial info we have.
+      this.logger.warn(
+        { conversationId, callerId, name: name || '(unknown)', phone: phone || '(unknown)', messageCount: messages.length },
+        "Incomplete extraction at wrap-up — flagging for manual counsellor follow-up"
+      );
+      const partialSubstance = extracted.primary_substance?.value || null;
+      const partialCity = extracted.city_town?.value || null;
+      const partialUrgency = extracted.urgency_level?.value || null;
+      const manualBrief = {
+        contact_name: name || '(name not captured)',
+        contact_phone: phone || callerId,  // callerId is the WhatsApp number for WhatsApp callers
+        city: partialCity,
+        track: partialSubstance ? 'substance' : null,
+        substance_primary: partialSubstance,
+        urgency: partialUrgency || 'unknown',
+        urgency_level: partialUrgency || 'normal',
+        notes_for_therapist: `MANUAL REVIEW REQUIRED: Grace completed ${messages.length} messages but could not extract name or phone number from the conversation. Caller ID: ${callerId}. Partial data captured — substance: ${partialSubstance || 'unknown'}, city: ${partialCity || 'unknown'}. Review conversation ${conversationId} in the database.`,
+        caller_type: callerType || 'self',
+        language_preference: 'en',
+      };
+      // Non-blocking — don't let notification failure prevent conversation from closing
+      notifyTherapist({
+        sessionId: callerId,
+        leadId: null,
+        priority: partialUrgency === 'crisis' || partialUrgency === 'immediate' ? 'HIGH' : 'NORMAL',
+        brief: manualBrief,
+      }).catch(err => {
+        this.logger.error({ error: err.message, conversationId }, "Manual-review notification failed");
+      });
     }
 
     // Generate final summary response — deliberately does NOT mention any

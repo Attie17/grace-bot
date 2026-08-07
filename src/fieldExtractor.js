@@ -138,34 +138,53 @@ function extractName(messages) {
 }
 
 /**
+ * Normalise a South African phone number to the standard 0XXXXXXXXX local form.
+ *
+ * Handles:
+ *   0721234567        → 0721234567  (already canonical)
+ *   072 123 4567      → 0721234567  (spaces)
+ *   072-123-4567      → 0721234567  (dashes)
+ *   (072) 123-4567    → 0721234567  (parens + dashes)
+ *   +27721234567      → 0721234567  (international with +)
+ *   +27 72 123 4567   → 0721234567  (international with spaces)
+ *   27721234567       → 0721234567  (international without +)
+ * Returns null if the cleaned string doesn't look like a 10-digit SA number.
+ */
+function normaliseSAPhone(raw) {
+  // Strip everything except digits and leading +
+  let digits = raw.replace(/[^\d+]/g, '');
+  // Collapse +27 or bare 27 prefix to local 0
+  if (digits.startsWith('+27')) digits = '0' + digits.slice(3);
+  else if (digits.startsWith('27') && digits.length === 11) digits = '0' + digits.slice(2);
+  return /^0[6-8]\d{8}$/.test(digits) ? digits : null;
+}
+
+/**
  * Extract phone number
  * FIX #3: Better regex that doesn't over-match
  * FIX #13: Search most recent messages first
- * FIX #14: Strip spaces/dashes before matching — callers write "072 123 4567"
+ * FIX #14: Handle all common SA formats — spaces, dashes, parens, +27, bare 27
  */
 function extractPhone(messages) {
   const searchMessages = [...messages].reverse();
 
+  // Regex that loosely matches digit runs that could be an SA phone number
+  // (10–12 digits, possibly separated by spaces/dashes/parens, optionally +27 prefix)
+  const candidatePattern = /(\+?(?:27)?[\s\-.(]*[06-9][\d\s\-().]{7,14}\d)/g;
+
   for (const msg of searchMessages) {
-    if (msg.role === "user") {
-      // Normalise common SA phone formatting before matching
-      const normalised = msg.content.replace(/(\d)[\s\-](\d)/g, '$1$2');
+    if (msg.role !== "user") continue;
 
-      const patterns = [
-        { pattern: /\b0\d{9}\b/, type: "local" },
-        { pattern: /\+27\d{9}\b/, type: "international" },
-      ];
-
-      for (const { pattern } of patterns) {
-        const match = normalised.match(pattern);
-        if (match) {
-          const hasContext = /(?:phone|call|number|reach|contact|text|whatsapp|sms)/i.test(msg.content);
-          return {
-            value: match[0],
-            confidence: hasContext ? 0.99 : 0.85,
-            source: hasContext ? "explicit_phone_context" : "regex_match",
-          };
-        }
+    const candidates = msg.content.match(candidatePattern) || [];
+    for (const candidate of candidates) {
+      const normalised = normaliseSAPhone(candidate);
+      if (normalised) {
+        const hasContext = /(?:phone|call|number|reach|contact|text|whatsapp|sms)/i.test(msg.content);
+        return {
+          value: normalised,
+          confidence: hasContext ? 0.99 : 0.85,
+          source: hasContext ? "explicit_phone_context" : "regex_match",
+        };
       }
     }
   }
