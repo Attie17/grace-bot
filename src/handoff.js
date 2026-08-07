@@ -12,12 +12,15 @@
  */
 
 import nodemailer from 'nodemailer';
-import twilio from 'twilio';
+import { sendWhatsAppViaMeta, isMetaEnabled } from './whatsapp-meta.js';
 import { logger } from './logger.js';
 
+/* TWILIO FALLBACK — leave in place for rollback (set WHATSAPP_PROVIDER=twilio):
+import twilio from 'twilio';
 const twilioClient = process.env.TWILIO_ACCOUNT_SID
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     : null;
+*/
 
 const emailTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -41,33 +44,38 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
     let sjWebhookResult = null;
 
     try {
-        // Always notify reception via WhatsApp for every completed lead
+        // WhatsApp notifications — primary path, awaited before returning.
+        // Email is fired in the background so a broken SMTP server cannot
+        // block or mask a successful WhatsApp delivery.
         if (brief) {
-            sendReceptionWhatsApp(brief).catch(err => {
+            await sendReceptionWhatsApp(brief).catch(err => {
                 logger.error({ error: err.message, leadId }, 'Reception WhatsApp failed');
             });
         }
 
-        // Send WhatsApp in background (non-blocking) - don't wait
-        // If WhatsApp fails, email will still be sent
         if (priority === 'CRISIS') {
-            sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
-                logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
+            await sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
+                logger.warn({ error: err.message, leadId, priority }, 'WhatsApp therapist alert failed');
             });
         } else if ((priority === 'HIGH' || brief?.involves_minor || brief?.urgency_level === 'crisis') && brief) {
-            sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
-                logger.warn({ error: err.message, leadId, priority }, 'WhatsApp alert failed (continuing with email)');
+            await sendWhatsAppAlert({ priority, brief, type, lastMessage }).catch(err => {
+                logger.warn({ error: err.message, leadId, priority }, 'WhatsApp therapist alert failed');
             });
         }
 
-        // Always send email with full brief - critical path that must not fail silently
+        // Email — secondary, non-blocking.  SMTP may be unreliable; failures
+        // are logged but do not affect the return value or caller flow.
         if (brief) {
-            await sendEmail({ leadId, priority, brief });
+            sendEmail({ leadId, priority, brief }).catch(err => {
+                logger.warn({ error: err.message, leadId }, 'Email notification failed (non-blocking)');
+            });
         } else if (isCrisis) {
-            await sendCrisisEmail({ sessionId, type, lastMessage });
+            sendCrisisEmail({ sessionId, type, lastMessage }).catch(err => {
+                logger.warn({ error: err.message }, 'Crisis email failed (non-blocking)');
+            });
         }
 
-        // Notify Sobriety Journey of new admission (capture result for invite URL)
+        // SJ webhook — awaited to capture the invite URL for the caller.
         if (brief && leadId) {
             sjWebhookResult = await notifySobrietyJourney(brief, leadId).catch(err => {
                 logger.warn({ error: err.message, leadId }, 'SJ webhook notification failed (non-blocking)');
@@ -75,25 +83,21 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             });
         }
 
-        logger.info({ leadId, priority }, 'Therapist notified (email sent)');
-
-        // Return invite URL if available
+        logger.info({ leadId, priority }, 'Therapist notified (WhatsApp sent)');
         return { inviteUrl: sjWebhookResult?.inviteUrl || null };
 
     } catch (error) {
-        logger.error({ error: error.message, leadId }, 'Failed to notify therapist - email not sent');
-        // Don't throw - conversation should continue even if alert fails
+        logger.error({ error: error.message, leadId }, 'Failed to notify therapist');
         return { inviteUrl: null };
     }
 }
 
 /**
- * Send WhatsApp alert to therapist via Twilio.
- * Includes timeout handling for Railway deployments.
+ * Send WhatsApp alert to therapist via Meta Cloud API.
  */
 async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
-    if (!twilioClient || !process.env.THERAPIST_WHATSAPP) {
-        logger.warn('WhatsApp alerts not configured, skipping');
+    if (!process.env.THERAPIST_WHATSAPP) {
+        logger.warn('THERAPIST_WHATSAPP not configured, skipping alert');
         return;
     }
 
@@ -112,31 +116,29 @@ async function sendWhatsAppAlert({ priority, brief, type, lastMessage }) {
         message = `📋 *URGENT GRACE BOT LEAD (${trackTag})*\n\nName: ${brief.contact_name}\nPhone: ${brief.contact_phone}\nBest time to call: ${brief.preferred_callback_time || 'Any time'}\n${trackLine}\nReadiness: ${brief.urgency}${extraNotes}\n\nPlease contact within 1 hour.`;
     }
 
+    if (isMetaEnabled()) {
+        return sendWhatsAppViaMeta(process.env.THERAPIST_WHATSAPP, message);
+    }
+
+    /* TWILIO FALLBACK (WHATSAPP_PROVIDER=twilio):
     const therapistNumber = process.env.THERAPIST_WHATSAPP.startsWith('whatsapp:')
         ? process.env.THERAPIST_WHATSAPP
         : `whatsapp:${process.env.THERAPIST_WHATSAPP}`;
-
-    // Wrap in timeout to prevent hanging on slow networks (Railway)
     return Promise.race([
-        twilioClient.messages.create({
-            body: message,
-            from: process.env.TWILIO_WHATSAPP_NUMBER,
-            to: therapistNumber
-        }),
-        new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('WhatsApp send timeout (30s)')), 30000)
-        )
+        twilioClient.messages.create({ body: message, from: process.env.TWILIO_WHATSAPP_NUMBER, to: therapistNumber }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('WhatsApp send timeout (30s)')), 30000))
     ]);
+    */
+
+    logger.warn('No WhatsApp provider configured for therapist alert');
 }
 
 /**
  * Send WhatsApp intake summary to reception for every completed lead.
- * Replaces broken email flow as primary notification method.
+ * Primary notification path — awaited by notifyTherapist().
  */
 async function sendReceptionWhatsApp(brief) {
-    if (!twilioClient || !process.env.RECEPTION_WHATSAPP || !brief) {
-        return Promise.resolve();
-    }
+    if (!process.env.RECEPTION_WHATSAPP || !brief) return;
 
     const urgencyEmoji =
         brief.urgency_level === 'crisis' ? '🚨' :
@@ -160,22 +162,25 @@ async function sendReceptionWhatsApp(brief) {
         ``,
         `📝 ${brief.health_notes ?
             brief.health_notes.substring(0, 200) : 'No health notes'}`,
+        brief.notes_for_therapist ? `⚠️ ${brief.notes_for_therapist.substring(0, 200)}` : null,
     ].filter(Boolean).join('\n');
 
+    if (isMetaEnabled()) {
+        return sendWhatsAppViaMeta(process.env.RECEPTION_WHATSAPP, lines);
+    }
+
+    /* TWILIO FALLBACK (WHATSAPP_PROVIDER=twilio):
+    if (!twilioClient) return;
     const receptionNumber = process.env.RECEPTION_WHATSAPP.startsWith('whatsapp:')
         ? process.env.RECEPTION_WHATSAPP
         : `whatsapp:${process.env.RECEPTION_WHATSAPP}`;
-
     return Promise.race([
-        twilioClient.messages.create({
-            from: process.env.TWILIO_WHATSAPP_NUMBER,
-            to: receptionNumber,
-            body: lines
-        }),
-        new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Reception WhatsApp send timeout (30s)')), 30000)
-        )
+        twilioClient.messages.create({ from: process.env.TWILIO_WHATSAPP_NUMBER, to: receptionNumber, body: lines }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Reception WhatsApp send timeout (30s)')), 30000))
     ]);
+    */
+
+    logger.warn('No WhatsApp provider configured for reception alert');
 }
 
 function escapeHtml(value) {

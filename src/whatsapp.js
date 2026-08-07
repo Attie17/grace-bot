@@ -1,51 +1,70 @@
 /**
- * WhatsApp Business API Integration — REWRITTEN
- * 
+ * WhatsApp Business API Integration
+ *
  * Routes incoming WhatsApp messages through conversationEngine.js
- * (AI-driven, MI-informed, trauma-aware intake) instead of the old
- * scripted stage engine.
- * 
+ * (AI-driven, MI-informed, trauma-aware intake).
+ *
  * Model: claude-haiku-4-5-20251001 (set in conversationEngine.js)
- * 
- * Webhook flow:
- * 1. Caller messages the WhatsApp number (via social media ad button)
- * 2. Twilio POSTs to /api/whatsapp/webhook
- * 3. We look up conversation history by phone number
+ *
+ * Webhook flow (Meta Cloud API — active):
+ * 1. Caller messages the WhatsApp number
+ * 2. Meta POSTs to GET /api/whatsapp/webhook for verification, then
+ *    POST /api/whatsapp/webhook for each inbound message
+ * 3. server.js verifies X-Hub-Signature-256, parses Meta format
  * 4. Route through conductIntake() in conversationEngine.js
- * 5. Send Grace's response back via Twilio
- * 6. Notify receptionist on escalation or lead creation
- * 
- * Previous version used advanceWhatsAppStage() from whatsapp-stages.js
- * and detectCrisis() from claude-client.js — both retired in this rewrite.
+ * 5. Send Grace's response back via Meta Graph API
+ *
+ * Rollback: set WHATSAPP_PROVIDER=twilio in env to revert to Twilio.
  */
 
-import twilio from 'twilio';
+import { sendWhatsAppViaMeta, parseMetaWebhookBody, isMetaEnabled } from './whatsapp-meta.js';
 import { getClient } from './database.js';
 import { GraceConversationEngine } from './conversationEngine.js';
 import { notifyTherapist } from './handoff.js';
 import { logger } from './logger.js';
 
+/* TWILIO FALLBACK — leave in place for rollback (set WHATSAPP_PROVIDER=twilio):
+import twilio from 'twilio';
 const twilioClient = process.env.TWILIO_ACCOUNT_SID
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     : null;
+*/
 
 // Initialize conversation engine (single instance, reused across requests)
 // Uses shared Supabase client from database.js — no duplicate connections
 const engine = new GraceConversationEngine(getClient(), logger);
 
 /**
- * Handle incoming WhatsApp message from Twilio webhook.
- * Twilio sends: Body, From, To, MessageSid, ProfileName, etc.
+ * Handle incoming WhatsApp message.
+ * Supports both Meta Cloud API format (active) and Twilio format (dormant).
+ *
+ * Meta format: nested JSON with entry[].changes[].value.messages[]
+ * Twilio format: flat body with Body, From, ProfileName keys
  */
 export async function handleWhatsAppMessage(body) {
-    const { Body, From, ProfileName } = body;
+    // Parse payload — Meta format or Twilio flat format
+    let parsed;
+    if (body?.object === 'whatsapp_business_account') {
+        parsed = parseMetaWebhookBody(body);
+        if (!parsed) {
+            // Status updates (delivery/read receipts) — silently ignore
+            return;
+        }
+    } else {
+        // Twilio flat format (dormant path)
+        parsed = { Body: body.Body, From: body.From, ProfileName: body.ProfileName || '' };
+    }
+
+    const { Body, From, ProfileName } = parsed;
 
     if (!Body || !From) {
         logger.warn({ body }, 'Malformed WhatsApp webhook');
         return;
     }
 
-    // Use phone number as caller ID (stable across conversation)
+    // callerId is stable across the conversation.
+    // Both Twilio ("whatsapp:+27721234567") and Meta ("+27721234567") normalise
+    // to "wa_+27721234567" after stripping the whatsapp: prefix.
     const callerId = `wa_${From.replace('whatsapp:', '')}`;
 
     logger.info({ from: From, preview: Body.substring(0, 50) }, 'WhatsApp message received');
@@ -112,24 +131,27 @@ export async function handleWhatsAppMessage(body) {
 }
 
 /**
- * Send WhatsApp message via Twilio.
+ * Send WhatsApp message — Meta Cloud API (active) or Twilio fallback.
  */
 async function sendWhatsApp(to, message) {
+    if (isMetaEnabled()) {
+        return sendWhatsAppViaMeta(to, message);
+    }
+
+    /* TWILIO FALLBACK (WHATSAPP_PROVIDER=twilio):
     if (!twilioClient) {
         logger.warn('Twilio not configured - would send:', message);
         return;
     }
+    await twilioClient.messages.create({
+        from: process.env.TWILIO_WHATSAPP_NUMBER,
+        to: to,
+        body: message
+    });
+    return;
+    */
 
-    try {
-        await twilioClient.messages.create({
-            from: process.env.TWILIO_WHATSAPP_NUMBER,
-            to: to, // Already in whatsapp: format from webhook
-            body: message
-        });
-    } catch (error) {
-        logger.error({ error: error.message, to }, 'Failed to send WhatsApp');
-        throw error;
-    }
+    logger.warn({ to }, 'No WhatsApp provider configured — message not sent');
 }
 
 /**

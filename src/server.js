@@ -36,6 +36,7 @@ import {
 import { saveConversation, loadConversation, createLead, getClient } from './database.js';
 import { notifyTherapist } from './handoff.js';
 import { handleWhatsAppMessage } from './whatsapp.js';
+import { verifyMetaSignature } from './whatsapp-meta.js';
 import { logger } from './logger.js';
 import { startScheduler } from './scheduler.js';
 
@@ -50,7 +51,12 @@ app.set('trust proxy', 1);
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '1mb' }));
+// Capture raw body buffer before JSON parsing — required for Meta webhook
+// HMAC-SHA256 signature verification (X-Hub-Signature-256).
+app.use(express.json({
+    limit: '1mb',
+    verify: (req, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true }));
 
 const chatLimiter = rateLimit({
@@ -454,14 +460,37 @@ app.get('/api/conversation/:sessionId', async (req, res) => {
     }
 });
 
-app.post('/api/whatsapp/webhook', async (req, res) => {
-    try {
-        await handleWhatsAppMessage(req.body);
-        res.status(200).send('OK');
-    } catch (error) {
-        logger.error({ error: error.message }, 'WhatsApp webhook error');
-        res.status(500).send('Error');
+// Meta webhook verification challenge (GET).
+// Meta sends ?hub.mode=subscribe&hub.challenge=<string>&hub.verify_token=<token>
+// Respond with the raw challenge string to confirm we own this endpoint.
+app.get('/api/whatsapp/webhook', (req, res) => {
+    const mode    = req.query['hub.mode'];
+    const token   = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    if (mode === 'subscribe' && token === process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
+        logger.info('Meta webhook verification challenge passed');
+        return res.status(200).send(challenge);
     }
+    logger.warn({ mode, token }, 'Meta webhook verification failed — wrong token or mode');
+    return res.status(403).send('Forbidden');
+});
+
+app.post('/api/whatsapp/webhook', (req, res) => {
+    // Verify Meta HMAC-SHA256 signature before touching the body.
+    const signature = req.headers['x-hub-signature-256'];
+    if (!verifyMetaSignature(req.rawBody, signature)) {
+        logger.warn({ signature }, 'WhatsApp webhook signature verification failed — rejected');
+        return res.status(403).send('Forbidden');
+    }
+
+    // Acknowledge receipt immediately — Meta retries if it doesn't get 200
+    // within the window.  Processing happens asynchronously.
+    res.status(200).send('OK');
+
+    handleWhatsAppMessage(req.body).catch(err => {
+        logger.error({ error: err.message }, 'WhatsApp webhook processing error');
+    });
 });
 
 app.get('/api/admin/stats', async (req, res) => {
