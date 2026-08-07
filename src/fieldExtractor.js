@@ -95,13 +95,36 @@ function extractName(messages) {
         if (match) {
           const candidate = match[1];
           if (NAME_STOPWORDS.has(candidate.toLowerCase())) {
-            continue; // not a name, try next pattern / message
+            continue;
           }
           return {
             value: candidate,
             confidence: 0.95,
             source: "explicit_introduction",
           };
+        }
+      }
+
+      // Bare-name reply: if the preceding assistant message asked for the caller's name,
+      // treat a short single-word response that isn't a stopword as their name.
+      if (i > 0) {
+        const prevAssistant = messages[i - 1];
+        if (
+          prevAssistant?.role === "assistant" &&
+          /(?:your name|what.*name|may I.*name|call you|introduce yourself)/i.test(prevAssistant.content)
+        ) {
+          const trimmed = msg.content.trim();
+          const bareNameMatch = trimmed.match(/^([A-Za-z]{2,30})$/);
+          if (bareNameMatch) {
+            const candidate = bareNameMatch[1];
+            if (!NAME_STOPWORDS.has(candidate.toLowerCase())) {
+              return {
+                value: candidate.charAt(0).toUpperCase() + candidate.slice(1).toLowerCase(),
+                confidence: 0.8,
+                source: "bare_name_reply",
+              };
+            }
+          }
         }
       }
     }
@@ -118,43 +141,29 @@ function extractName(messages) {
  * Extract phone number
  * FIX #3: Better regex that doesn't over-match
  * FIX #13: Search most recent messages first
+ * FIX #14: Strip spaces/dashes before matching — callers write "072 123 4567"
  */
 function extractPhone(messages) {
   const searchMessages = [...messages].reverse();
 
   for (const msg of searchMessages) {
     if (msg.role === "user") {
+      // Normalise common SA phone formatting before matching
+      const normalised = msg.content.replace(/(\d)[\s\-](\d)/g, '$1$2');
+
       const patterns = [
-        {
-          pattern: /\b0\d{9}\b/,
-          type: "local",
-        },
-        {
-          pattern: /\+27\d{9}\b/,
-          type: "international",
-        },
+        { pattern: /\b0\d{9}\b/, type: "local" },
+        { pattern: /\+27\d{9}\b/, type: "international" },
       ];
 
-      for (const { pattern, type } of patterns) {
-        const match = msg.content.match(pattern);
+      for (const { pattern } of patterns) {
+        const match = normalised.match(pattern);
         if (match) {
-          const phoneText = msg.content;
-          if (
-            /(?:phone|call|number|reach|contact|text|whatsapp|sms)/i.test(
-              phoneText
-            )
-          ) {
-            return {
-              value: match[0],
-              confidence: 0.99,
-              source: "explicit_phone_context",
-            };
-          }
-
+          const hasContext = /(?:phone|call|number|reach|contact|text|whatsapp|sms)/i.test(msg.content);
           return {
             value: match[0],
-            confidence: 0.85,
-            source: "regex_match",
+            confidence: hasContext ? 0.99 : 0.85,
+            source: hasContext ? "explicit_phone_context" : "regex_match",
           };
         }
       }

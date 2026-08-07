@@ -22,9 +22,10 @@ describe("Grace Conversation Engine", () => {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null }),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
       insert: jest.fn().mockResolvedValue({ data: [{}], error: null }),
       update: jest.fn().mockResolvedValue({ data: [], error: null }),
+      upsert: jest.fn().mockReturnThis(),
     };
 
     // Mock Logger
@@ -118,6 +119,40 @@ describe("Grace Conversation Engine", () => {
       ];
       const extracted = await extractFieldsFromConversation(messages);
       expect(extracted.city_town?.value).toMatch(/johannesburg/i);
+    });
+
+    it("should extract phone number with spaces (formatted SA number)", async () => {
+      const messages = [
+        { role: "user", content: "072 456 7890" },
+      ];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.phone?.value).toBe("0724567890");
+    });
+
+    it("should extract phone number with dashes", async () => {
+      const messages = [
+        { role: "user", content: "You can reach me on 083-999-1234" },
+      ];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.phone?.value).toBe("0839991234");
+    });
+
+    it("should extract bare name reply after Grace asks for name", async () => {
+      const messages = [
+        { role: "assistant", content: "What is your name?" },
+        { role: "user", content: "Maria" },
+      ];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.name?.value).toBe("Maria");
+    });
+
+    it("should NOT extract stopword as bare name reply after name question", async () => {
+      const messages = [
+        { role: "assistant", content: "May I ask your name?" },
+        { role: "user", content: "worried" },
+      ];
+      const extracted = await extractFieldsFromConversation(messages);
+      expect(extracted.name?.value).toBeNull();
     });
   });
 
