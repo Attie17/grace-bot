@@ -297,9 +297,7 @@ class GraceConversationEngine {
 
     // Generate final summary response — deliberately does NOT mention any
     // URL, so Claude never has to generate or guess at one
-    const summaryPrompt = `Based on this conversation, provide a brief, warm closing message (2-3 sentences). 
-Confirm next steps and include emergency numbers if appropriate.
-Use the caller's own language. Be warm and hopeful. Do NOT include any links or URLs in your response.`;
+    const summaryPrompt = `Based on this conversation, write exactly ONE sentence — warm, personal, using the caller's name if you have it. Confirm that someone from Stabilis will be in touch soon. Do NOT mention a specific time. Do NOT include emergency numbers. Do NOT include any links or URLs. One sentence only.`;
 
     const finalMessages = [
       ...messages.map((m) => ({
@@ -324,7 +322,7 @@ Use the caller's own language. Be warm and hopeful. Do NOT include any links or 
     // Append the real invite URL programmatically — never let the model
     // generate or touch it, same safety principle used in ai-grace.js
     if (inviteUrl) {
-      closingMessage += `\n\nIf you follow this link you can sign in (for free) to a page where we can assist you in these times. Please click here:\n${inviteUrl}`;
+      closingMessage += `\n\nThis is the end of our discussion. Thank you for the information you gave us. In the meantime follow this link to keep in touch and maybe get some more questions answered.\n${inviteUrl}`;
     }
 
     await this.saveConversation({
