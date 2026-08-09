@@ -111,7 +111,7 @@ function extractName(messages) {
         const prevAssistant = messages[i - 1];
         if (
           prevAssistant?.role === "assistant" &&
-          /(?:your name|what.*name|may I.*name|call you|introduce yourself)/i.test(prevAssistant.content)
+          /(?:your name|what.*name|may I.*name|call you|introduce yourself|can I get your name|get your name|name to pass|ask for when)/i.test(prevAssistant.content)
         ) {
           const trimmed = msg.content.trim();
           const bareNameMatch = trimmed.match(/^([A-Za-z]{2,30})$/);
