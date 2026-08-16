@@ -12,6 +12,7 @@
  */
 
 import nodemailer from 'nodemailer';
+import { createHmac } from 'crypto';
 import { sendWhatsAppViaMeta, isMetaEnabled } from './whatsapp-meta.js';
 import { logger } from './logger.js';
 
@@ -441,6 +442,11 @@ async function notifySobrietyJourney(brief, leadId) {
         return null;
     }
 
+    if (!secret) {
+        logger.warn({ leadId }, 'SJ_WEBHOOK_SECRET not set — skipping SJ notification');
+        return null;
+    }
+
     try {
         // Build payload for SJ webhook
         const payload = {
@@ -457,14 +463,20 @@ async function notifySobrietyJourney(brief, leadId) {
             'Calling SJ webhook to create patient account'
         );
 
+        // Sign the request with HMAC-SHA256
+        const bodyStr = JSON.stringify(payload);
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const signedPayload = `${timestamp}.${bodyStr}`;
+        const hmacSignature = `sha256=${createHmac('sha256', secret).update(signedPayload).digest('hex')}`;
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-webhook-secret': secret || ''
+                'x-webhook-timestamp': timestamp,
+                'x-webhook-signature': hmacSignature,
             },
-            body: JSON.stringify(payload),
-            timeout: 5000
+            body: bodyStr,
+            signal: AbortSignal.timeout(5000),
         });
 
         if (!response.ok) {
