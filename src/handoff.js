@@ -42,7 +42,6 @@ const emailTransporter = nodemailer.createTransport({
  */
 export async function notifyTherapist({ sessionId, leadId, priority, brief, type, lastMessage }) {
     const isCrisis = priority === 'CRISIS';
-    let sjWebhookResult = null;
 
     try {
         // WhatsApp notifications — primary path, awaited before returning.
@@ -76,20 +75,21 @@ export async function notifyTherapist({ sessionId, leadId, priority, brief, type
             });
         }
 
-        // SJ webhook — awaited to capture the invite URL for the caller.
-        if (brief && leadId) {
-            sjWebhookResult = await notifySobrietyJourney(brief, leadId).catch(err => {
-                logger.warn({ error: err.message, leadId }, 'SJ webhook notification failed (non-blocking)');
-                return null;
-            });
-        }
-
         logger.info({ leadId, priority }, 'Therapist notified (WhatsApp sent)');
-        return { inviteUrl: sjWebhookResult?.inviteUrl || null };
+        return { inviteUrl: null };
 
     } catch (error) {
         logger.error({ error: error.message, leadId }, 'Failed to notify therapist');
         return { inviteUrl: null };
+    } finally {
+        // Fire SJ webhook independently — non-blocking
+        // This ensures the webhook fires for every completed lead regardless of
+        // whether email or therapist notification succeeds or fails
+        if (brief && leadId) {
+            notifySobrietyJourney(brief, leadId).catch(err => {
+                logger.warn({ error: err.message, leadId }, '[handoff] SJ webhook failed — non-blocking');
+            });
+        }
     }
 }
 
